@@ -720,6 +720,17 @@ function loadDriveImage(img, mapId, fileId, size) {
   img.src = url;
 }
 
+// Memoria dei dati già ricevuti: le schermate compaiono subito e si aggiornano dopo.
+function readSaved(storage, key) {
+  try { const v = storage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+}
+function writeSaved(storage, key, value) {
+  try { storage.setItem(key, JSON.stringify(value)); } catch (e) { /* spazio finito o memoria non disponibile */ }
+}
+function clearSaved(storage, prefix) {
+  try { Object.keys(storage).forEach(k => { if (k.indexOf(prefix) === 0) storage.removeItem(k); }); } catch (e) { /* niente */ }
+}
+
 // Miniatura per gli elenchi (circa 480 px): si carica in un attimo.
 function prepareThumb(file) {
   return prepareImage(file, 480, 0.75).then(t => ({ base64: t.base64, mime: t.mime }));
@@ -1309,7 +1320,7 @@ const queue = new SyncQueue({
       state.retryAdd = null;
       if (r && canWrite()) addPointForm(r.x, r.y, r.fields, 'La puntina non è stata salvata. Controlla e riprova.');
     } else if (data && data.map.id === state.mapId) {
-      state.data = data;
+      setData(data);
       renderMapUi();
     }
   }
@@ -1359,6 +1370,7 @@ function renderWho() {
 
 function logout() {
   saveCode('');
+  try { sessionStorage.removeItem('maplab_ident'); } catch (e) { /* niente */ }
   state.ident = null;
   state.blockReason = '';
   state.onlyMine = false;
@@ -1404,6 +1416,7 @@ async function login(code) {
   saveCode(code);
   state.ident = res.identity;
   state.blockReason = res.blockReason || '';
+  rememberIdentity();
   renderWho();
   if (state.mapId) {
     renderMapUi();
@@ -1437,10 +1450,25 @@ function showStart() {
 
 async function showHub() {
   show('screenHub');
-  $('hubCards').innerHTML = '<div class="spinner"></div>';
+  const key = 'maplab_hub_' + state.code.toUpperCase();
+  const saved = readSaved(sessionStorage, key);
+  if (saved) drawHub(saved); else $('hubCards').innerHTML = '<div class="spinner"></div>';
   try {
     const res = await api('listMapsForCode', { code: state.code });
+    writeSaved(sessionStorage, key, res);
+    drawHub(res);
+  } catch (e) {
+    saveCode('');
+    state.ident = null;
+    toast(e.message, 'err');
+    showStart();
+  }
+}
+
+function drawHub(res) {
+  {
     state.ident = res.identity;
+    rememberIdentity();
     renderWho();
     $('hubTitle').textContent = `Le mappe della ${res.identity.className}`;
     $('hubLead').textContent = res.maps.length
@@ -1456,12 +1484,20 @@ async function showHub() {
         </span>
       </a>`).join('');
     $('hubCards').querySelectorAll('img[data-file]').forEach(img => loadDriveImage(img, img.dataset.map, img.dataset.file, 600));
-  } catch (e) {
-    saveCode('');
-    state.ident = null;
-    toast(e.message, 'err');
-    showStart();
   }
+}
+
+// L'identità (classe e numero) si ricorda per la sessione: il pulsante "Aggiungi" è subito pronto.
+function rememberIdentity() {
+  if (state.ident && state.code) writeSaved(sessionStorage, 'maplab_ident', { code: state.code, ident: state.ident });
+}
+
+// Salva i dati della mappa per mostrarla subito alla prossima apertura.
+function setData(data) {
+  state.data = data;
+  const copy = Object.assign({}, data);
+  delete copy.identity; delete copy.blockReason; delete copy.codeError;
+  writeSaved(localStorage, 'maplab_map_' + state.mapId, copy);
 }
 
 // ---------- Mappa ----------
@@ -1474,21 +1510,36 @@ async function showMap() {
   show('screenMap');
   $('titleSep').hidden = false;
   if (window.innerWidth <= 760) $('screenMap').classList.add('panel-closed');
+  // Se questa mappa è già stata aperta, la mostro subito e intanto chiedo quella aggiornata.
+  const savedIdent = readSaved(sessionStorage, 'maplab_ident');
+  if (savedIdent && savedIdent.code === state.code) state.ident = savedIdent.ident;
   renderWho();
-  viewer.showMessage('Caricamento della mappa…');
-  try {
-    state.data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
-  } catch (e) {
-    viewer.showMessage(e.message);
-    return;
+  const saved = readSaved(localStorage, 'maplab_map_' + state.mapId);
+  const showImage = map => {
+    document.title = map.title + ' — MapLab';
+    if (map.imageFileId) viewer.setImage(state.mapId, map.imageFileId, map.imageW, map.imageH, map.thumbFileId);
+    else viewer.showMessage('L\'insegnante non ha ancora caricato la carta.');
+  };
+  if (saved) {
+    state.data = saved;
+    showImage(saved.map);
+    renderMapUi();
+  } else {
+    viewer.showMessage('Caricamento della mappa…');
   }
-  const map = state.data.map;
-  document.title = map.title + ' — MapLab';
-  if (map.imageFileId) viewer.setImage(state.mapId, map.imageFileId, map.imageW, map.imageH, map.thumbFileId);
-  else viewer.showMessage('L\'insegnante non ha ancora caricato la carta.');
-  adoptIdentity(state.data);
-  renderWho();
-  renderMapUi();
+  try {
+    const fresh = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
+    const imageChanged = !saved || saved.map.imageFileId !== fresh.map.imageFileId;
+    if (queue.pending) { adoptIdentity(fresh); } // nel frattempo lo studente ha già aggiunto qualcosa
+    else setData(fresh);
+    if (imageChanged) showImage(fresh.map);
+    adoptIdentity(fresh);
+    renderWho();
+    renderMapUi();
+  } catch (e) {
+    if (!saved) { viewer.showMessage(e.message); return; }
+    toast('Non riesco ad aggiornare la mappa: mostro l\'ultima versione vista.', 'err');
+  }
   setInterval(refresh, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 }
@@ -1507,6 +1558,7 @@ function adoptIdentity(data) {
   if (data.identity) {
     state.ident = data.identity;
     state.blockReason = data.blockReason || '';
+    rememberIdentity();
   }
 }
 
@@ -1516,7 +1568,7 @@ async function refresh() {
     const data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
     if (queue.pending || state.placing) return; // nel frattempo è cambiato qualcosa qui
     const imageChanged = data.map.imageFileId !== state.data.map.imageFileId;
-    state.data = data;
+    setData(data);
     adoptIdentity(data);
     if (imageChanged && data.map.imageFileId) viewer.setImage(state.mapId, data.map.imageFileId, data.map.imageW, data.map.imageH, data.map.thumbFileId);
     renderMapUi();
@@ -1769,7 +1821,7 @@ async function removePoint(p) {
 async function reloadNow() {
   try {
     const data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
-    state.data = data;
+    setData(data);
     adoptIdentity(data);
     renderMapUi();
   } catch (e) { toast(e.message, 'err'); }

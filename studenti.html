@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MapLab</title>
+<style>
+:root{
+  --ink:#1d2529;
+  --ink-2:#55626a;
+  --ink-3:#7d888e;
+  --line:#d3d9da;
+  --line-2:#e6eaea;
+  --surface:#ffffff;
+  --bg:#eef1f0;
+  --bar:#1e2f36;
+  --bar-ink:#e8efee;
+  --bar-ink-2:#a9bbbd;
+  --accent:#2c5a66;
+  --accent-hover:#234a54;
+  --accent-soft:#e1ecee;
+  --danger:#a3312a;
+  --danger-soft:#f7e6e4;
+  --ok:#2f6b3a;
+  --ok-soft:#e3f1e5;
+  --warn:#7a5200;
+  --warn-soft:#fbf0d9;
+  --map-bg:#d6dcda;
+  --serif:"Palatino Linotype","Book Antiqua",Palatino,"Iowan Old Style",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --r-sm:6px;
+  --r-md:10px;
+  --shadow:0 10px 30px rgba(20,32,38,.18),0 2px 6px rgba(20,32,38,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--sans);font-size:15px;line-height:1.45;color:var(--ink);background:var(--bg);-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid #5aa3b3;outline-offset:2px}
+
+/* ---------- Barra superiore ---------- */
+.topbar{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;background:var(--bar);color:var(--bar-ink)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.01em;white-space:nowrap;color:inherit;text-decoration:none}
+.brand svg{flex:none}
+.topbar .sep{width:1px;align-self:stretch;margin:6px 2px;background:rgba(255,255,255,.18)}
+.topbar-title{font-family:var(--serif);font-size:1.15rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .spacer{flex:1}
+.topbar .btn-ghost{color:var(--bar-ink);border-color:rgba(255,255,255,.28)}
+.topbar .btn-ghost:hover{background:rgba(255,255,255,.08)}
+
+/* ---------- Pulsanti ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:7px 14px;border-radius:var(--r-sm);border:1px solid transparent;background:var(--accent);color:#fff;font-weight:600;font-size:.92rem;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--accent-hover)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn svg{flex:none}
+.btn-ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+.btn-ghost:hover{background:var(--accent-soft)}
+.btn-danger{background:var(--danger)}
+.btn-danger:hover{background:#86271f}
+.btn-danger-ghost{background:transparent;color:var(--danger);border-color:#e3c3bf}
+.btn-danger-ghost:hover{background:var(--danger-soft)}
+.btn-sm{min-height:32px;padding:4px 10px;font-size:.85rem}
+.btn-icon{width:38px;padding:0}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* ---------- Campi ---------- */
+.field{display:block;margin:0 0 14px}
+.field > .label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.field .hint{display:block;font-size:.8rem;color:var(--ink-3);margin-top:4px}
+.input,textarea.input,select.input{width:100%;min-height:40px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+textarea.input{min-height:110px;resize:vertical;line-height:1.5}
+.input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(44,90,102,.18)}
+.check{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+
+/* ---------- Finestre di dialogo ---------- */
+dialog.dlg{border:none;padding:0;border-radius:var(--r-md);box-shadow:var(--shadow);width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);color:var(--ink);overflow:hidden}
+dialog.dlg[open]{display:flex;flex-direction:column}
+dialog.dlg > form,dialog.dlg > .capsule{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
+dialog.dlg.wide{width:min(760px,calc(100vw - 24px))}
+dialog.dlg::backdrop{background:rgba(18,28,33,.55)}
+.dlg-head{display:flex;align-items:center;gap:12px;padding:16px 18px 10px}
+.dlg-head h2{margin:0;font-size:1.1rem;flex:1}
+.dlg-body{padding:6px 18px 8px;overflow:auto;flex:1 1 auto;min-height:0}
+.dlg-foot{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line-2)}
+.dlg-foot .left{margin-right:auto}
+.err{color:var(--danger);font-size:.85rem;min-height:1.2em;margin:4px 0 0}
+
+/* ---------- Avvisi ---------- */
+.toast-wrap{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:grid;gap:8px;z-index:1000;width:min(460px,calc(100vw - 32px));pointer-events:none}
+.toast{padding:10px 14px;border-radius:var(--r-sm);background:var(--bar);color:#fff;box-shadow:var(--shadow);font-size:.92rem;pointer-events:auto}
+.toast.err{background:var(--danger);color:#fff;margin:0}
+.toast.ok{background:var(--ok)}
+.notice{padding:10px 12px;border-radius:var(--r-sm);font-size:.88rem;background:var(--accent-soft);color:var(--accent-hover)}
+.notice.warn{background:var(--warn-soft);color:var(--warn)}
+.notice.danger{background:var(--danger-soft);color:var(--danger)}
+
+/* ---------- Chip ---------- */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--line-2);color:var(--ink-2);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.closed{background:var(--danger-soft);color:var(--danger)}
+.chip.muted{background:#eceeee;color:var(--ink-3)}
+
+/* ---------- Visualizzatore mappa ---------- */
+.viewer{position:relative;overflow:hidden;background:var(--map-bg);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;outline:none}
+.viewer.dragging{cursor:grabbing}
+.viewer.placing{cursor:crosshair}
+.viewer .stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.viewer .stage.animating{transition:transform .35s ease}
+.viewer .map-img{display:block;width:100%;height:100%;pointer-events:none;box-shadow:0 2px 14px rgba(0,0,0,.25);background:#fff}
+.viewer .pins{position:absolute;inset:0}
+.pin{position:absolute;width:0;height:0;transform:scale(var(--inv,1))}
+.pin-btn{position:absolute;left:-15px;top:-40px;width:30px;height:40px;padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));transform-origin:50% 100%;transition:transform .12s}
+.pin-btn:hover,.pin.is-active .pin-btn{transform:scale(1.22)}
+.pin.is-active{z-index:5}
+.pin.ghost .pin-btn{opacity:.75;pointer-events:none}
+.pin.pending .pin-btn{opacity:.6}
+.pending-note{color:var(--accent);font-weight:600}
+.save-status{display:inline-flex;align-items:center;gap:7px;padding:3px 10px;border-radius:999px;font-size:.8rem;font-weight:600;white-space:nowrap;background:rgba(255,255,255,.12);color:var(--bar-ink)}
+.save-status .dot{width:8px;height:8px;border-radius:50%;background:#f0c05a;animation:pulse 1s ease-in-out infinite alternate}
+.save-status[data-state="saved"]{color:#bfe3c6}
+@keyframes pulse{from{opacity:.35}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.save-status .dot{animation:none}}
+.pin svg{display:block}
+.viewer-empty{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--ink-2)}
+.viewer-controls{position:absolute;right:12px;top:12px;display:grid;gap:6px;z-index:10}
+.viewer-controls button{width:40px;height:40px;border-radius:var(--r-sm);border:1px solid var(--line);background:#fff;color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.viewer-controls button:hover{background:var(--accent-soft)}
+.placing-banner{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:11;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:999px;background:var(--bar);color:#fff;box-shadow:var(--shadow);font-size:.9rem;max-width:calc(100% - 90px)}
+.placing-banner .btn{min-height:30px;padding:3px 12px;background:#fff;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.viewer .stage.animating{transition:none}.pin-btn{transition:none}}
+
+/* ---------- Capsula (contenuto di una puntina) ---------- */
+.capsule{display:flex;flex-direction:column}
+.capsule-author{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f5f7f7;border-bottom:1px solid var(--line-2)}
+.avatar{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1rem;letter-spacing:.02em}
+.avatar.small{width:30px;height:30px;font-size:.8rem}
+.author-name{font-weight:700;font-size:.95rem;line-height:1.2}
+.author-sub{font-size:.8rem;color:var(--ink-2);margin-top:2px}
+.capsule-author .close{margin-left:auto}
+.capsule-main{padding:16px 18px 6px;overflow:auto;flex:1 1 auto;min-height:0}
+.cat-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 4px;border-radius:999px;font-size:.8rem;font-weight:600;background:var(--line-2);color:var(--ink-2)}
+.cat-chip .dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center}
+.capsule-title{font-family:var(--serif);font-size:1.45rem;line-height:1.2;margin:10px 0 8px;overflow-wrap:anywhere}
+.capsule-text{font-size:1rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px;max-width:62ch}
+.capsule-text.empty{color:var(--ink-3);font-style:italic}
+.capsule-figure{margin:4px 0 12px}
+.capsule-figure img{display:block;max-width:100%;max-height:50vh;border-radius:var(--r-sm);border:1px solid var(--line-2);background:#f3f3f3}
+.capsule-dates{font-size:.78rem;color:var(--ink-3);padding:0 18px 12px}
+.capsule-foot{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line-2)}
+
+/* ---------- Modulo puntina ---------- */
+.form-pin-preview{flex:none;width:30px;height:40px}
+.cat-choices{display:flex;flex-wrap:wrap;gap:6px}
+.cat-choice{display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 7px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-size:.88rem}
+.cat-choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-hover);font-weight:600}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.swatch{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
+.swatch-custom{position:relative;display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--ink-2);cursor:pointer}
+.swatch-custom.on input{box-shadow:0 0 0 3px var(--ink)}
+.swatch-custom input{width:36px;height:32px;padding:0;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;cursor:pointer}
+.img-preview{display:flex;align-items:center;gap:10px;margin-top:8px}
+.img-preview img{width:84px;height:64px;object-fit:cover;border-radius:var(--r-sm);border:1px solid var(--line)}
+
+/* ---------- Griglia icone ---------- */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:4px}
+.icon-opt{display:grid;place-items:center;aspect-ratio:1;padding:0;border:1px solid var(--line-2);border-radius:var(--r-sm);background:#fff;cursor:pointer;color:var(--ink)}
+.icon-opt:hover{background:var(--accent-soft)}
+.icon-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-hover);font-weight:600;box-shadow:inset 0 0 0 1px var(--accent)}
+
+.spinner{width:22px;height:22px;border-radius:50%;border:3px solid rgba(0,0,0,.12);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-cover{position:absolute;inset:0;display:grid;place-items:center;background:rgba(238,241,240,.7);z-index:20}
+.muted{color:var(--ink-3)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+
+body{display:grid;grid-template-rows:auto 1fr;height:100dvh;overflow:hidden}
+.who{display:flex;align-items:center;gap:8px;min-width:0}
+.who-chip{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 3px;border-radius:999px;background:rgba(255,255,255,.1);font-size:.85rem;white-space:nowrap}
+.who-chip .avatar{background:#e8efee;color:var(--bar)}
+.topbar .chip{background:rgba(255,255,255,.14);color:var(--bar-ink)}
+
+/* Schermata mappa */
+.map-screen{display:grid;grid-template-columns:1fr 340px;min-height:0}
+.map-screen.panel-closed{grid-template-columns:1fr 0}
+.map-area{position:relative;min-height:0;min-width:0}
+.map-area .viewer{position:absolute;inset:0}
+.map-actions{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;z-index:12}
+.map-actions .btn{box-shadow:var(--shadow);min-height:46px;padding:10px 18px;font-size:1rem;border-radius:999px}
+.map-actions .btn-ghost{background:#fff}
+.status-note{position:absolute;left:12px;top:12px;z-index:11;max-width:min(380px,calc(100% - 80px));box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+.panel{display:flex;flex-direction:column;min-height:0;background:var(--surface);border-left:1px solid var(--line);overflow:hidden}
+.map-screen.panel-closed .panel{display:none}
+.panel-head{display:flex;align-items:center;gap:8px;padding:14px 16px 8px}
+.panel-head h2{flex:1;margin:0;font-size:1rem}
+.panel-desc{margin:0;padding:0 16px 10px;color:var(--ink-2);font-size:.9rem;white-space:pre-wrap}
+.filters{display:flex;flex-wrap:wrap;gap:6px;padding:4px 16px 10px}
+.filter{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:.82rem;cursor:pointer}
+.filter[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+.filter .n{color:var(--ink-3);font-weight:600}
+.panel .search{margin:0 16px 8px;width:calc(100% - 32px)}
+.pin-list{list-style:none;margin:0;padding:0 8px 16px;overflow:auto;flex:1}
+.pin-item{display:flex;gap:10px;align-items:flex-start;width:100%;padding:9px 8px;border:0;border-radius:var(--r-sm);background:none;text-align:left;cursor:pointer}
+.pin-item:hover{background:var(--accent-soft)}
+.pin-item .pi-pin{flex:none;transform:scale(.75);transform-origin:top center;height:30px}
+.pin-item .pi-title{font-weight:600;line-height:1.25}
+.pin-item .pi-sub{font-size:.8rem;color:var(--ink-3)}
+.pin-list .empty{padding:16px 8px;color:var(--ink-3);font-size:.9rem}
+
+@media (max-width:760px){
+  .map-screen,.map-screen.panel-closed{grid-template-columns:1fr}
+  .panel{position:fixed;left:0;right:0;bottom:0;max-height:62dvh;z-index:30;border-left:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;box-shadow:var(--shadow)}
+  .topbar-title{font-size:1rem}
+  .who-chip .who-text{display:none}
+}
+
+/* Schermate elenco e ingresso */
+.page{overflow:auto;padding:28px 16px 48px}
+.page-inner{max-width:880px;margin:0 auto}
+.page h1{font-family:var(--serif);font-weight:600;font-size:1.8rem;margin:0 0 6px}
+.page .lead{color:var(--ink-2);margin:0 0 22px}
+.map-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.map-card{display:flex;flex-direction:column;text-align:left;padding:0;border:1px solid var(--line);border-radius:var(--r-md);background:#fff;overflow:hidden;cursor:pointer;color:inherit;text-decoration:none}
+.map-card:hover{border-color:var(--accent)}
+.map-card .thumb{aspect-ratio:4/3;background:var(--map-bg);display:block;width:100%;object-fit:cover}
+.map-card .body{padding:12px 14px 14px}
+.map-card h3{font-family:var(--serif);margin:0 0 4px;font-size:1.12rem}
+.map-card p{margin:0 0 8px;color:var(--ink-2);font-size:.88rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.start-box{max-width:420px;margin:8vh auto 0;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:24px}
+.start-box h1{font-size:1.6rem}
+.code-input{font-size:1.4rem;letter-spacing:.2em;text-transform:uppercase;text-align:center;font-family:ui-monospace,Consolas,monospace}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="?" id="brandLink"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="#e8efee"/><path d="M5 19l5-9 4 6 3-4 4 7z" fill="#2c5a66"/><path d="M17.5 3.5c-2.2 0-4 1.7-4 3.9 0 2.9 4 7.1 4 7.1s4-4.2 4-7.1c0-2.2-1.8-3.9-4-3.9z" fill="#b23a2e"/><circle cx="17.5" cy="7.4" r="1.4" fill="#fff"/></svg><span>MapLab</span></a>
+  <span class="sep" id="titleSep" hidden></span>
+  <div class="topbar-title" id="mapTitle"></div>
+  <span id="lockChip" class="chip" hidden></span>
+  <span class="spacer"></span>
+  <span class="save-status" id="saveStatus" hidden></span>
+  <div class="who" id="who"></div>
+</header>
+
+<!-- Mappa -->
+<main class="map-screen" id="screenMap" hidden>
+  <div class="map-area">
+    <div id="viewer"></div>
+    <div class="status-note notice" id="statusNote" hidden></div>
+    <div class="map-actions">
+      <button class="btn" id="btnAdd" type="button" hidden></button>
+      <button class="btn btn-ghost" id="btnList" type="button"></button>
+    </div>
+  </div>
+  <aside class="panel" id="panel" aria-label="Elenco delle puntine">
+    <div class="panel-head">
+      <h2>Puntine <span class="muted" id="pinCount"></span></h2>
+      <button class="btn btn-ghost btn-icon" id="btnPanelClose" type="button" aria-label="Chiudi elenco"></button>
+    </div>
+    <p class="panel-desc" id="mapDesc" hidden></p>
+    <div class="filters" id="filters"></div>
+    <input class="input search" id="search" type="search" placeholder="Cerca nelle puntine" aria-label="Cerca nelle puntine">
+    <ul class="pin-list" id="pinList"></ul>
+  </aside>
+</main>
+
+<!-- Elenco mappe della classe -->
+<main class="page" id="screenHub" hidden>
+  <div class="page-inner">
+    <h1 id="hubTitle">Le mappe della tua classe</h1>
+    <p class="lead" id="hubLead"></p>
+    <div class="map-cards" id="hubCards"></div>
+  </div>
+</main>
+
+<!-- Ingresso -->
+<main class="page" id="screenStart" hidden>
+  <form class="start-box" id="startForm">
+    <h1>Benvenuto in MapLab</h1>
+    <p class="lead">Scrivi il codice che ti ha dato l'insegnante per vedere le mappe della tua classe. Se hai ricevuto un link, aprilo direttamente.</p>
+    <label class="field"><span class="label">Codice</span>
+      <input class="input code-input" name="code" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+    <p class="err" id="startErr"></p>
+    <button class="btn" type="submit" style="width:100%">Entra</button>
+  </form>
+</main>
+
+<script>
+// ===================== CONFIGURAZIONE =====================
+// Indirizzo della Web App di Apps Script (finisce con /exec). Vedi ISTRUZIONI.
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxpUWL14cgK_bTilX1cpHFqGS2pKcgw0JjSWGvxHNMXUEZ3qjoDHtP7gYZmiM7yuPnEUg/exec';
+// ==========================================================
+</script>
+<script>
+/* Icone: Lucide (lucide.dev), licenza ISC */
+const ICONS = {"circle-alert":{"label":"Attenzione","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/>"},
+"circle-help":{"label":"Domanda","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"/><path d=\"M12 17h.01\"/>"},
+"info":{"label":"Informazione","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4\"/><path d=\"M12 8h.01\"/>"},
+"triangle-alert":{"label":"Pericolo","svg":"<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/>"},
+"circle-check":{"label":"Fatto / vero","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m16 9-5.5 5.5L8 12\"/>"},
+"circle-x":{"label":"Sbagliato / falso","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/>"},
+"star":{"label":"Stella","svg":"<path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\"/>"},
+"heart":{"label":"Cuore","svg":"<path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\"/>"},
+"bookmark":{"label":"Segnalibro","svg":"<path d=\"M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z\"/>"},
+"map-pin":{"label":"Luogo","svg":"<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/>"},
+"target":{"label":"Obiettivo","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/>"},
+"eye":{"label":"Da osservare","svg":"<path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>"},
+"calendar":{"label":"Data","svg":"<path d=\"M8 2v3\"/><path d=\"M16 2v3\"/><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18\"/>"},
+"hourglass":{"label":"Periodo","svg":"<path d=\"M5 22h14\"/><path d=\"M5 2h14\"/><path d=\"M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22\"/><path d=\"M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2\"/>"},
+"zap":{"label":"Evento improvviso","svg":"<path d=\"M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z\"/>"},
+"lightbulb":{"label":"Idea / scoperta","svg":"<path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"/><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/>"},
+"user":{"label":"Personaggio","svg":"<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>"},
+"users":{"label":"Popolo / gruppo","svg":"<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/>"},
+"baby":{"label":"Nascita","svg":"<path d=\"M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5\"/><path d=\"M15 12h.01\"/><path d=\"M19.38 6.813A9 9 0 0 1 20.8 10.2a2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1\"/><path d=\"M9 12h.01\"/>"},
+"crown":{"label":"Sovrano / regno","svg":"<path d=\"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z\"/><path d=\"M5 21h14\"/>"},
+"megaphone":{"label":"Propaganda / annuncio","svg":"<path d=\"M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z\"/><path d=\"M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14\"/><path d=\"M8 6v8\"/>"},
+"vote":{"label":"Voto / elezioni","svg":"<path d=\"m9 12 2 2 4-4\"/><path d=\"M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z\"/><path d=\"M22 19H2\"/>"},
+"newspaper":{"label":"Notizia / giornale","svg":"<path d=\"M15 18h-5\"/><path d=\"M18 14h-8\"/><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2\"/><rect width=\"8\" height=\"4\" x=\"10\" y=\"6\" rx=\"1\"/>"},
+"gavel":{"label":"Legge / tribunale","svg":"<path d=\"m14 13-8.381 8.38a1 1 0 0 1-3.001-3l8.384-8.381\"/><path d=\"m16 16 6-6\"/><path d=\"m21.5 10.5-8-8\"/><path d=\"m8 8 6-6\"/><path d=\"m8.5 7.5 8 8\"/>"},
+"scale":{"label":"Giustizia","svg":"<path d=\"M12 3v18\"/><path d=\"m19 8 3 8a5 5 0 0 1-6 0zV7\"/><path d=\"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1\"/><path d=\"m5 8 3 8a5 5 0 0 1-6 0zV7\"/><path d=\"M7 21h10\"/>"},
+"handshake":{"label":"Alleanza / accordo","svg":"<path d=\"m11 17 2 2a1 1 0 1 0 3-3\"/><path d=\"m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4\"/><path d=\"m21 3 1 11h-2\"/><path d=\"M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3\"/><path d=\"M3 4h8\"/>"},
+"scroll":{"label":"Documento / trattato","svg":"<path d=\"M19 17V5a2 2 0 0 0-2-2H4\"/><path d=\"M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3\"/>"},
+"flag":{"label":"Conquista / evento","svg":"<path d=\"M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528\"/>"},
+"flag-triangle-right":{"label":"Bandiera","svg":"<path d=\"M6 22V2.8a.8.8 0 0 1 1.17-.71l11.38 5.69a.8.8 0 0 1 0 1.44L6 15.5\"/>"},
+"swords":{"label":"Battaglia","svg":"<path d=\"m13 19 6-6\"/><path d=\"M14.5 17.5 3.586 6.586A2 2 0 013 5.172V3h2.172a2 2 0 011.414.586L17.5 14.5\"/><path d=\"m14.828 6.172 2.586-2.586A2 2 0 0118.828 3H21v2.172a2 2 0 01-.586 1.414l-2.586 2.586\"/><path d=\"m16 16 4 4\"/><path d=\"m19 21 2-2\"/><path d=\"m5 14 4 4\"/><path d=\"m5 21-2-2\"/><path d=\"M7.5 16.5 4 20\"/>"},
+"sword":{"label":"Spada","svg":"<path d=\"m11 19-6-6\"/><path d=\"m5 21-2-2\"/><path d=\"m8 16-4 4\"/><path d=\"M9.5 17.5 20.414 6.586A2 2 0 0021 5.172V3h-2.172a2 2 0 00-1.414.586L6.5 14.5\"/>"},
+"shield":{"label":"Difesa / esercito","svg":"<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/>"},
+"axe":{"label":"Ascia","svg":"<path d=\"m14 12-8.381 8.38a1 1 0 0 1-3.001-3L11 9\"/><path d=\"M15 15.5a.5.5 0 0 0 .5.5A6.5 6.5 0 0 0 22 9.5a.5.5 0 0 0-.5-.5h-1.672a2 2 0 0 1-1.414-.586l-5.062-5.062a1.205 1.205 0 0 0-1.704 0L9.352 5.648a1.205 1.205 0 0 0 0 1.704l5.062 5.062A2 2 0 0 1 15 13.828z\"/>"},
+"bomb":{"label":"Bombardamento","svg":"<circle cx=\"11\" cy=\"13\" r=\"9\"/><path d=\"M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95\"/><path d=\"m22 2-1.5 1.5\"/>"},
+"crosshair":{"label":"Bersaglio / attacco","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"22\" x2=\"18\" y1=\"12\" y2=\"12\"/><line x1=\"6\" x2=\"2\" y1=\"12\" y2=\"12\"/><line x1=\"12\" x2=\"12\" y1=\"6\" y2=\"2\"/><line x1=\"12\" x2=\"12\" y1=\"22\" y2=\"18\"/>"},
+"skull":{"label":"Strage / morte","svg":"<path d=\"m12.5 17-.5-1-.5 1h1z\"/><path d=\"M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/>"},
+"flame":{"label":"Rivolta / incendio","svg":"<path d=\"M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4\"/>"},
+"biohazard":{"label":"Epidemia","svg":"<circle cx=\"12\" cy=\"11.9\" r=\"2\"/><path d=\"M6.7 3.4c-.9 2.5 0 5.2 2.2 6.7C6.5 9 3.7 9.6 2 11.6\"/><path d=\"m8.9 10.1 1.4.8\"/><path d=\"M17.3 3.4c.9 2.5 0 5.2-2.2 6.7 2.4-1.2 5.2-.6 6.9 1.5\"/><path d=\"m15.1 10.1-1.4.8\"/><path d=\"M16.7 20.8c-2.6-.4-4.6-2.6-4.7-5.3-.2 2.6-2.1 4.8-4.7 5.2\"/><path d=\"M12 13.9v1.6\"/><path d=\"M13.5 5.4c-1-.2-2-.2-3 0\"/><path d=\"M17 16.4c.7-.7 1.2-1.6 1.5-2.5\"/><path d=\"M5.5 13.9c.3.9.8 1.8 1.5 2.5\"/>"},
+"castle":{"label":"Castello / fortezza","svg":"<path d=\"M10 5V3\"/><path d=\"M14 5V3\"/><path d=\"M15 21v-3a3 3 0 0 0-6 0v3\"/><path d=\"M18 3v8\"/><path d=\"M18 5H6\"/><path d=\"M22 11H2\"/><path d=\"M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9\"/><path d=\"M6 3v8\"/>"},
+"landmark":{"label":"Tempio / monumento","svg":"<path d=\"M10 18v-7\"/><path d=\"M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z\"/><path d=\"M14 18v-7\"/><path d=\"M18 18v-7\"/><path d=\"M3 22h18\"/><path d=\"M6 18v-7\"/>"},
+"church":{"label":"Chiesa","svg":"<path d=\"M10 9h4\"/><path d=\"M12 7v5\"/><path d=\"M14 21v-3a2 2 0 0 0-4 0v3\"/><path d=\"m18 9 3.52 2.147a1 1 0 0 1 .48.854V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6.999a1 1 0 0 1 .48-.854L6 9\"/><path d=\"M6 21V7a1 1 0 0 1 .376-.782l5-3.999a1 1 0 0 1 1.249.001l5 4A1 1 0 0 1 18 7v14\"/>"},
+"cross":{"label":"Croce","svg":"<path d=\"M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a1 1 0 0 1 1 1v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a1 1 0 0 1 1-1h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a1 1 0 0 1-1-1V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1z\"/>"},
+"moon-star":{"label":"Mezzaluna","svg":"<path d=\"M18 5h4\"/><path d=\"M20 3v4\"/><path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"/>"},
+"house":{"label":"Città / villaggio","svg":"<path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"/><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>"},
+"building-2":{"label":"Città moderna","svg":"<path d=\"M10 12h4\"/><path d=\"M10 8h4\"/><path d=\"M14 21v-3a2 2 0 0 0-4 0v3\"/><path d=\"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2\"/><path d=\"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16\"/>"},
+"factory":{"label":"Industria","svg":"<path d=\"M12 16h.01\"/><path d=\"M16 16h.01\"/><path d=\"M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z\"/><path d=\"M8 16h.01\"/>"},
+"tent":{"label":"Accampamento","svg":"<path d=\"M3.5 21 14 3\"/><path d=\"M20.5 21 10 3\"/><path d=\"M15.5 21 12 15l-3.5 6\"/><path d=\"M2 21h20\"/>"},
+"tower-control":{"label":"Torre / porto","svg":"<path d=\"M18.2 12.27 20 6H4l1.8 6.27a1 1 0 0 0 .95.73h10.5a1 1 0 0 0 .96-.73Z\"/><path d=\"M8 13v9\"/><path d=\"M16 22v-9\"/><path d=\"m9 6 1 7\"/><path d=\"m15 6-1 7\"/><path d=\"M12 6V2\"/><path d=\"M13 2h-2\"/>"},
+"compass":{"label":"Esplorazione","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z\"/>"},
+"map":{"label":"Mappa","svg":"<path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"/><path d=\"M15 5.764v15\"/><path d=\"M9 3.236v15\"/>"},
+"globe":{"label":"Mondo","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/><path d=\"M2 12h20\"/>"},
+"ship":{"label":"Nave / flotta","svg":"<path d=\"M12 2v2\"/><path d=\"M12 9.189V13\"/><path d=\"M19 12V6a2 2 0 00-2-2H7a2 2 0 00-2 2v6\"/><path d=\"M19.38 19A11.6 11.6 0 0021 13l-8.188-3.639a2 2 0 00-1.624 0L3 13.001a11.6 11.6 0 002.81 7.76\"/><path d=\"M2 20c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\"/>"},
+"sailboat":{"label":"Barca a vela","svg":"<path d=\"M10 2v15\"/><path d=\"M7 22a4 4 0 0 1-4-4 1 1 0 0 1 1-1h16a1 1 0 0 1 1 1 4 4 0 0 1-4 4z\"/><path d=\"M9.159 2.46a1 1 0 0 1 1.521-.193l9.977 8.98A1 1 0 0 1 20 13H4a1 1 0 0 1-.824-1.567z\"/>"},
+"anchor":{"label":"Porto","svg":"<path d=\"M12 6v16\"/><path d=\"m19 13 2-1a9 9 0 0 1-18 0l2 1\"/><path d=\"M9 11h6\"/><circle cx=\"12\" cy=\"4\" r=\"2\"/>"},
+"footprints":{"label":"Viaggio / migrazione","svg":"<path d=\"M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z\"/><path d=\"M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z\"/><path d=\"M16 17h4\"/><path d=\"M4 13h4\"/>"},
+"train-front":{"label":"Ferrovia","svg":"<path d=\"M8 3.1V7a4 4 0 0 0 8 0V3.1\"/><path d=\"m9 15-1-1\"/><path d=\"m15 15 1-1\"/><path d=\"M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z\"/><path d=\"m8 19-2 3\"/><path d=\"m16 19 2 3\"/>"},
+"car":{"label":"Automobile","svg":"<path d=\"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2\"/><circle cx=\"7\" cy=\"17\" r=\"2\"/><path d=\"M9 17h6\"/><circle cx=\"17\" cy=\"17\" r=\"2\"/>"},
+"plane":{"label":"Aereo","svg":"<path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z\"/>"},
+"rocket":{"label":"Razzo / spazio","svg":"<path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09\"/><path d=\"M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05\"/>"},
+"mountain":{"label":"Montagna / valico","svg":"<path d=\"m8 3 4 8 5-5 5 15H2L8 3z\"/>"},
+"mountain-snow":{"label":"Alpi","svg":"<path d=\"m8 3 4 8 5-5 5 15H2L8 3z\"/><path d=\"M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19\"/>"},
+"waves":{"label":"Mare / fiume","svg":"<path d=\"M2 12q2.5 2 5 0t5 0 5 0 5 0\"/><path d=\"M2 19q2.5 2 5 0t5 0 5 0 5 0\"/><path d=\"M2 5q2.5 2 5 0t5 0 5 0 5 0\"/>"},
+"droplet":{"label":"Acqua","svg":"<path d=\"M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z\"/>"},
+"trees":{"label":"Foresta","svg":"<path d=\"M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z\"/><path d=\"M7 16v6\"/><path d=\"M13 19v3\"/><path d=\"M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5\"/>"},
+"tree-pine":{"label":"Albero","svg":"<path d=\"m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z\"/><path d=\"M12 22v-3\"/>"},
+"sun":{"label":"Sole","svg":"<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/>"},
+"moon":{"label":"Luna","svg":"<path d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"/>"},
+"cloud-rain":{"label":"Clima","svg":"<path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\"/><path d=\"M16 14v6\"/><path d=\"M8 14v6\"/><path d=\"M12 16v6\"/>"},
+"snowflake":{"label":"Inverno / freddo","svg":"<path d=\"m10 20-1.25-2.5L6 18\"/><path d=\"M10 4 8.75 6.5 6 6\"/><path d=\"m14 20 1.25-2.5L18 18\"/><path d=\"m14 4 1.25 2.5L18 6\"/><path d=\"m17 21-3-6h-4\"/><path d=\"m17 3-3 6 1.5 3\"/><path d=\"M2 12h6.5L10 9\"/><path d=\"m20 10-1.5 2 1.5 2\"/><path d=\"M22 12h-6.5L14 15\"/><path d=\"m4 10 1.5 2L4 14\"/><path d=\"m7 21 3-6-1.5-3\"/><path d=\"m7 3 3 6h4\"/>"},
+"fish":{"label":"Pesca","svg":"<path d=\"M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z\"/><path d=\"M18 12v.5\"/><path d=\"M16 17.93a9.77 9.77 0 0 1 0-11.86\"/><path d=\"M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33\"/><path d=\"M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4\"/><path d=\"m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98\"/>"},
+"bird":{"label":"Uccello","svg":"<path d=\"M16 7h.01\"/><path d=\"M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20\"/><path d=\"m20 7 2 .5-2 .5\"/><path d=\"M10 18v3\"/><path d=\"M14 17.75V21\"/><path d=\"M7 18a6 6 0 0 0 3.84-10.61\"/>"},
+"dog":{"label":"Animale","svg":"<path d=\"M11.25 16.25h1.5L12 17z\"/><path d=\"M16 14v.5\"/><path d=\"M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444a11.702 11.702 0 0 0-.493-3.309\"/><path d=\"M8 14v.5\"/><path d=\"M8.5 8.5c-.384 1.05-1.083 2.028-2.344 2.5-1.931.722-3.576-.297-3.656-1-.113-.994 1.177-6.53 4-7 1.923-.321 3.651.845 3.651 2.235A7.497 7.497 0 0 1 14 5.277c0-1.39 1.844-2.598 3.767-2.277 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.855-1.45-2.239-2.5\"/>"},
+"bug":{"label":"Insetto","svg":"<path d=\"M12 20v-9\"/><path d=\"M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z\"/><path d=\"M14.12 3.88 16 2\"/><path d=\"M21 21a4 4 0 0 0-3.81-4\"/><path d=\"M21 5a4 4 0 0 1-3.55 3.97\"/><path d=\"M22 13h-4\"/><path d=\"M3 21a4 4 0 0 1 3.81-4\"/><path d=\"M3 5a4 4 0 0 0 3.55 3.97\"/><path d=\"M6 13H2\"/><path d=\"m8 2 1.88 1.88\"/><path d=\"M9 7.13V6a3 3 0 1 1 6 0v1.13\"/>"},
+"bone":{"label":"Reperto / fossile","svg":"<path d=\"M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5Z\"/>"},
+"wheat":{"label":"Agricoltura","svg":"<path d=\"M2 22 16 8\"/><path d=\"M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z\"/><path d=\"M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z\"/><path d=\"M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z\"/><path d=\"M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z\"/><path d=\"M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z\"/><path d=\"M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z\"/><path d=\"M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z\"/>"},
+"grape":{"label":"Vite / vino","svg":"<path d=\"M22 5V2l-5.89 5.89\"/><circle cx=\"16.6\" cy=\"15.89\" r=\"3\"/><circle cx=\"8.11\" cy=\"7.4\" r=\"3\"/><circle cx=\"12.35\" cy=\"11.65\" r=\"3\"/><circle cx=\"13.91\" cy=\"5.85\" r=\"3\"/><circle cx=\"18.15\" cy=\"10.09\" r=\"3\"/><circle cx=\"6.56\" cy=\"13.2\" r=\"3\"/><circle cx=\"10.8\" cy=\"17.44\" r=\"3\"/><circle cx=\"5\" cy=\"19\" r=\"3\"/>"},
+"apple":{"label":"Frutta","svg":"<path d=\"M12 6.528V3a1 1 0 0 1 1-1h0\"/><path d=\"M18.237 21A15 15 0 0 0 22 11a6 6 0 0 0-10-4.472A6 6 0 0 0 2 11a15.1 15.1 0 0 0 3.763 10 3 3 0 0 0 3.648.648 5.5 5.5 0 0 1 5.178 0A3 3 0 0 0 18.237 21\"/>"},
+"coins":{"label":"Commercio","svg":"<path d=\"M13.744 17.736a6 6 0 1 1-7.48-7.48\"/><path d=\"M15 6h1v4\"/><path d=\"m6.134 14.768.866-.5 2 3.464\"/><circle cx=\"16\" cy=\"8\" r=\"6\"/>"},
+"gem":{"label":"Ricchezza","svg":"<path d=\"M10.5 3 8 9l4 13 4-13-2.5-6\"/><path d=\"M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z\"/><path d=\"M2 9h20\"/>"},
+"pickaxe":{"label":"Miniera / risorse","svg":"<path d=\"m14 13-8.381 8.38a1 1 0 0 1-3.001-3L11 9.999\"/><path d=\"M15.973 4.027A13 13 0 0 0 5.902 2.373c-1.398.342-1.092 2.158.277 2.601a19.9 19.9 0 0 1 5.822 3.024\"/><path d=\"M16.001 11.999a19.9 19.9 0 0 1 3.024 5.824c.444 1.369 2.26 1.676 2.603.278A13 13 0 0 0 20 8.069\"/><path d=\"M18.352 3.352a1.205 1.205 0 0 0-1.704 0l-5.296 5.296a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l5.296-5.296a1.205 1.205 0 0 0 0-1.704z\"/>"},
+"hammer":{"label":"Artigianato","svg":"<path d=\"m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9\"/><path d=\"m18 15 4-4\"/><path d=\"m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5\"/>"},
+"anvil":{"label":"Metallurgia","svg":"<path d=\"M7 10H6a4 4 0 0 1-4-4 1 1 0 0 1 1-1h4\"/><path d=\"M7 5a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1 7 7 0 0 1-7 7H8a1 1 0 0 1-1-1z\"/><path d=\"M9 12v5\"/><path d=\"M15 12v5\"/><path d=\"M5 20a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3 1 1 0 0 1-1 1H6a1 1 0 0 1-1-1\"/>"},
+"cog":{"label":"Macchina","svg":"<path d=\"M11 10.27 7 3.34\"/><path d=\"m11 13.73-4 6.93\"/><path d=\"M12 22v-2\"/><path d=\"M12 2v2\"/><path d=\"M14 12h8\"/><path d=\"m17 20.66-1-1.73\"/><path d=\"m17 3.34-1 1.73\"/><path d=\"M2 12h2\"/><path d=\"m20.66 17-1.73-1\"/><path d=\"m20.66 7-1.73 1\"/><path d=\"m3.34 17 1.73-1\"/><path d=\"m3.34 7 1.73 1\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"8\"/>"},
+"book-open":{"label":"Opera / libro","svg":"<path d=\"M12 5v16\"/><path d=\"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z\"/>"},
+"feather":{"label":"Autore / poeta","svg":"<path d=\"M14.086 18.412A2 2 0 0112.67 19H5v-7.672a2 2 0 01.586-1.414L11.75 3.75a6 6 0 118.49 8.49z\"/><path d=\"M16 8 2 22\"/><path d=\"M17.488 15H9\"/>"},
+"pen-tool":{"label":"Scrittura","svg":"<path d=\"M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z\"/><path d=\"m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18\"/><path d=\"m2.3 2.3 7.286 7.286\"/><circle cx=\"11\" cy=\"11\" r=\"2\"/>"},
+"graduation-cap":{"label":"Scuola / università","svg":"<path d=\"M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z\"/><path d=\"M22 10v6\"/><path d=\"M6 12.5V16a6 3 0 0 0 12 0v-3.5\"/>"},
+"palette":{"label":"Arte","svg":"<path d=\"M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z\"/><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>"},
+"music":{"label":"Musica","svg":"<path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/>"},
+"theater":{"label":"Teatro","svg":"<path d=\"M2 10s3-3 3-8\"/><path d=\"M22 10s-3-3-3-8\"/><path d=\"M10 2c0 4.4-3.6 8-8 8\"/><path d=\"M14 2c0 4.4 3.6 8 8 8\"/><path d=\"M2 10s2 2 2 5\"/><path d=\"M22 10s-2 2-2 5\"/><path d=\"M8 15h8\"/><path d=\"M2 22v-1a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1\"/><path d=\"M14 22v-1a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1\"/>"},
+"camera":{"label":"Fotografia","svg":"<path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/>"},
+"atom":{"label":"Scienza","svg":"<circle cx=\"12\" cy=\"12\" r=\"1\"/><path d=\"M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z\"/><path d=\"M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z\"/>"},
+"microscope":{"label":"Ricerca","svg":"<path d=\"M6 18h8\"/><path d=\"M3 22h18\"/><path d=\"M14 22a7 7 0 1 0 0-14h-1\"/><path d=\"M9 14h2\"/><path d=\"M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z\"/><path d=\"M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3\"/>"},
+"flask-conical":{"label":"Chimica","svg":"<path d=\"M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2\"/><path d=\"M6.453 15h11.094\"/><path d=\"M8.5 2h7\"/>"},
+"stethoscope":{"label":"Medicina","svg":"<path d=\"M11 2v2\"/><path d=\"M5 2v2\"/><path d=\"M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1\"/><path d=\"M8 15a6 6 0 0 0 12 0v-3\"/><circle cx=\"20\" cy=\"10\" r=\"2\"/>"},
+"pill":{"label":"Farmaco","svg":"<path d=\"m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z\"/><path d=\"m8.5 8.5 7 7\"/>"},
+"syringe":{"label":"Vaccino","svg":"<path d=\"m18 2 4 4\"/><path d=\"m17 7 3-3\"/><path d=\"M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5\"/><path d=\"m9 11 4 4\"/><path d=\"m5 19-3 3\"/><path d=\"m14 4 6 6\"/>"}};
+
+/* ================= MapLab — funzioni comuni ================= */
+
+// ---------- Comunicazione con il server (Apps Script) ----------
+async function api(action, params) {
+  if (!WEBAPP_URL || /INSERISCI/.test(WEBAPP_URL)) {
+    throw new Error("Manca l'indirizzo del server: inserisci WEBAPP_URL in cima al file (vedi ISTRUZIONI).");
+  }
+  let res;
+  try {
+    res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ action: action }, params || {}))
+    });
+  } catch (e) {
+    throw new Error('Connessione al server non riuscita. Controlla la rete e riprova.');
+  }
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new Error('Il server ha risposto in modo inatteso. Controlla che la Web App sia pubblicata con accesso "Chiunque".');
+  }
+  if (!data.ok) throw new Error(data.error || 'Errore sconosciuto.');
+  return data;
+}
+
+// ---------- Salvataggio in sottofondo ----------
+// Le modifiche compaiono subito sullo schermo; il server le riceve una alla volta,
+// nell'ordine in cui sono state fatte. Se qualcosa va storto, la pagina si
+// riallinea con i dati veri del server.
+class SyncQueue {
+  constructor(opts) {
+    this.opts = opts || {};
+    this.tasks = [];
+    this.busy = false;
+    this.failed = false;
+    this.lastData = null;
+    window.addEventListener('beforeunload', e => {
+      if (this.pending) { e.preventDefault(); e.returnValue = ''; }
+    });
+  }
+  get pending() { return this.tasks.length + (this.busy ? 1 : 0); }
+  push(task) {
+    this.tasks.push(task);
+    this._status();
+    this._run();
+  }
+  async _run() {
+    if (this.busy) return;
+    this.busy = true;
+    while (this.tasks.length) {
+      const t = this.tasks.shift();
+      try {
+        const res = await t.run();
+        if (res && res.data) this.lastData = res.data;
+        if (t.onSuccess) t.onSuccess(res);
+      } catch (e) {
+        this.failed = true;
+        toast((t.label ? t.label + ': ' : '') + e.message, 'err');
+        if (t.onError) t.onError(e);
+      }
+      this._status();
+    }
+    this.busy = false;
+    const result = { failed: this.failed, data: this.lastData };
+    this.failed = false;
+    this.lastData = null;
+    this._status(result.failed);
+    if (this.opts.onIdle) await this.opts.onIdle(result);
+  }
+  _status(failed) { if (this.opts.onStatus) this.opts.onStatus(this.pending, failed); }
+}
+
+// Indicatore "Salvataggio… / Salvato" nella barra in alto.
+function saveIndicator(el) {
+  let timer;
+  return (pending, failed) => {
+    clearTimeout(timer);
+    if (pending) {
+      el.hidden = false;
+      el.dataset.state = 'saving';
+      el.innerHTML = '<span class="dot"></span>Salvataggio…';
+    } else if (failed) {
+      el.hidden = true;
+    } else {
+      el.dataset.state = 'saved';
+      el.innerHTML = '✓ Salvato';
+      timer = setTimeout(() => { el.hidden = true; }, 2200);
+    }
+  };
+}
+
+function newId(len) {
+  const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+  const arr = new Uint32Array(len || 12);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, n => chars[n % chars.length]).join('');
+}
+
+function nowIso() { return new Date().toISOString(); }
+
+// Applica localmente i campi del modulo a una puntina (prima che il server risponda).
+function applyFieldsLocally(p, fields) {
+  ['title', 'text', 'categoryId', 'color', 'authorName'].forEach(k => {
+    if (fields[k] !== undefined) p[k] = k === 'title' || k === 'authorName' ? String(fields[k]).trim() : fields[k];
+  });
+  if (fields.removeImage) p.imageFileId = '';
+  if (fields.image) {
+    p.imageFileId = 'local-' + newId(8);
+    imageCache[p.imageFileId] = 'data:' + fields.image.mime + ';base64,' + fields.image.base64;
+  }
+  p.updatedAt = nowIso();
+  p._pending = true;
+  return p;
+}
+
+// ---------- Testo ----------
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function linkify(text) {
+  return esc(text).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function fmtDate(iso, withTime) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+  if (withTime) { opts.hour = '2-digit'; opts.minute = '2-digit'; }
+  return d.toLocaleString('it-IT', opts);
+}
+
+function initials(name) {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  const a = parts[0][0] || '';
+  const b = parts.length > 1 ? parts[parts.length - 1][0] : (parts[0][1] || '');
+  return (a + b).toUpperCase();
+}
+
+// ---------- Colori ----------
+const PIN_PALETTE = ['#b23a2e', '#d4762a', '#c9a227', '#4f8a3c', '#2a8a86', '#2c5a7c', '#5b4a9e', '#9c3d78', '#6b4f3a', '#3a3f44'];
+const DEFAULT_PIN_COLOR = '#b23a2e';
+
+function isLight(hex) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+  if (!m) return false;
+  const [r, g, b] = [m[1], m[2], m[3]].map(h => {
+    const c = parseInt(h, 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.42;
+}
+function inkOn(hex) { return isLight(hex) ? '#1d2529' : '#ffffff'; }
+
+// ---------- Icone e puntine ----------
+function iconSvg(name, size, stroke) {
+  const ic = ICONS[name];
+  if (!ic) return '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${stroke || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic.svg}</svg>`;
+}
+
+const UI_ICONS = {
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  pin: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  move: '<path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
+  back: '<path d="M15 18l-6-6 6-6"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  upload: '<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>',
+  print: '<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"/>',
+  logout: '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.5A6.5 6.5 0 0 1 21.5 20"/>',
+  qr: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/>',
+  archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v12h14V8M10 12h4"/>',
+  duplicate: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>'
+};
+function ui(name, size) {
+  return `<svg width="${size || 18}" height="${size || 18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UI_ICONS[name] || ''}</svg>`;
+}
+
+const BRAND_SVG = `<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="#e8efee"/><path d="M5 19l5-9 4 6 3-4 4 7z" fill="#2c5a66"/><path d="M17.5 3.5c-2.2 0-4 1.7-4 3.9 0 2.9 4 7.1 4 7.1s4-4.2 4-7.1c0-2.2-1.8-3.9-4-3.9z" fill="#b23a2e"/><circle cx="17.5" cy="7.4" r="1.4" fill="#fff"/></svg>`;
+
+function pinSvg(color, iconName) {
+  color = color || DEFAULT_PIN_COLOR;
+  const fg = inkOn(color);
+  const ic = ICONS[iconName];
+  const inner = ic
+    ? `<g transform="translate(7.8 7.3) scale(0.6)" fill="none" stroke="${fg}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</g>`
+    : `<circle cx="15" cy="14.5" r="4.2" fill="${fg}"/>`;
+  return `<svg viewBox="0 0 30 40" width="30" height="40" aria-hidden="true"><path d="M15 39C15 39 3 24.6 3 14.5a12 12 0 0 1 24 0C27 24.6 15 39 15 39z" fill="${color}" stroke="rgba(0,0,0,.45)" stroke-width="1.2"/>${inner}</svg>`;
+}
+
+function catById(categories, id) {
+  return (categories || []).find(c => c.id === id) || null;
+}
+
+// ---------- Immagini ----------
+// Ridimensiona e comprime in JPEG prima di inviare, per risparmiare spazio e tempo.
+function prepareImage(file, maxSide, quality) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\//.test(file.type)) { reject(new Error('Il file scelto non è un\'immagine.')); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const k = Math.min(1, maxSide / Math.max(w, h));
+      w = Math.round(w * k); h = Math.round(h * k);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve({ base64: dataUrl.split(',')[1], mime: 'image/jpeg', w: w, h: h, dataUrl: dataUrl });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Impossibile leggere questa immagine. Prova con un JPG o PNG.')); };
+    img.src = url;
+  });
+}
+
+function driveThumb(fileId, size) {
+  return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w${size}`;
+}
+
+// Prova l'anteprima pubblica di Drive; se non funziona (file appena caricato o
+// condivisione vietata dal dominio) chiede l'immagine al server.
+const imageCache = {};
+function loadDriveImage(img, mapId, fileId, size) {
+  if (!fileId) return;
+  if (imageCache[fileId]) { img.src = imageCache[fileId]; return; }
+  let triedFallback = false;
+  img.onerror = async () => {
+    if (triedFallback) return;
+    triedFallback = true;
+    try {
+      const data = await api('getImage', { mapId: mapId, fileId: fileId });
+      imageCache[fileId] = data.dataUrl;
+      img.src = data.dataUrl;
+    } catch (e) {
+      img.alt = 'Immagine non disponibile';
+      img.dispatchEvent(new Event('maplab-failed'));
+    }
+  };
+  img.src = driveThumb(fileId, size);
+}
+
+// ---------- Avvisi e dialoghi ----------
+function toast(msg, kind) {
+  let wrap = document.querySelector('.toast-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'toast-wrap';
+    wrap.setAttribute('role', 'status');
+    wrap.setAttribute('aria-live', 'polite');
+    document.body.appendChild(wrap);
+  }
+  const t = document.createElement('div');
+  t.className = 'toast' + (kind ? ' ' + kind : '');
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), kind === 'err' ? 6000 : 3500);
+}
+
+function makeDialog(html, cls) {
+  const d = document.createElement('dialog');
+  d.className = 'dlg' + (cls ? ' ' + cls : '');
+  d.innerHTML = html;
+  document.body.appendChild(d);
+  d.addEventListener('close', () => setTimeout(() => d.remove(), 0));
+  return d;
+}
+
+function confirmBox(message, opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    const d = makeDialog(`
+      <div class="dlg-head"><h2>${esc(opts.title || 'Conferma')}</h2></div>
+      <div class="dlg-body"><p style="margin:0 0 8px">${esc(message)}</p></div>
+      <div class="dlg-foot">
+        <button class="btn btn-ghost" data-no type="button">Annulla</button>
+        <button class="btn ${opts.danger ? 'btn-danger' : ''}" data-yes type="button">${esc(opts.ok || 'Conferma')}</button>
+      </div>`);
+    let answer = false;
+    d.querySelector('[data-no]').onclick = () => d.close();
+    d.querySelector('[data-yes]').onclick = () => { answer = true; d.close(); };
+    d.addEventListener('close', () => resolve(answer));
+    d.showModal();
+  });
+}
+
+function anyDialogOpen() {
+  return !!document.querySelector('dialog[open]');
+}
+
+// ---------- File da scaricare ----------
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+// CSV con punto e virgola e BOM: si apre correttamente con Excel in italiano.
+function toCsv(rows) {
+  const cell = v => {
+    const s = v == null ? '' : String(v);
+    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  return '﻿' + rows.map(r => r.map(cell).join(';')).join('\r\n');
+}
+
+function safeFileName(s) {
+  return String(s).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_').slice(0, 60) || 'mappa';
+}
+
+// ---------- Chi ha scritto la puntina ----------
+function authorInfo(p, classNames, teacherView) {
+  const color = p.color || DEFAULT_PIN_COLOR;
+  if (p.byTeacher) return { avatar: 'Prof', name: 'Insegnante', sub: '', bg: '#1e2f36', fg: '#fff' };
+  const cls = (classNames && classNames[p.classId]) || p.className || '';
+  const num = p.codeN != null ? 'Studente n. ' + p.codeN : '';
+  const base = { bg: color, fg: inkOn(color) };
+  if (p.authorName) {
+    const sub = teacherView ? [cls, num || 'codice di classe'].filter(Boolean).join(' — ') : cls;
+    return Object.assign(base, { avatar: esc(initials(p.authorName)), name: p.authorName, sub: sub });
+  }
+  if (p.codeN != null) return Object.assign(base, { avatar: esc(String(p.codeN)), name: num, sub: cls });
+  return Object.assign(base, { avatar: ui('users', 20), name: cls ? 'Classe ' + cls : 'Tutta la classe', sub: 'Codice di classe' });
+}
+
+// HTML della capsula. actions: [{act, label, icon, cls}]
+function capsuleHtml(p, ctx) {
+  const a = authorInfo(p, ctx.classNames, ctx.teacherView);
+  const cat = catById(ctx.categories, p.categoryId);
+  const color = p.color || DEFAULT_PIN_COLOR;
+  const catHtml = cat
+    ? `<span class="cat-chip"><span class="dot" style="background:${color}">${iconSvg(cat.icon, 13, inkOn(color))}</span>${esc(cat.name)}</span>`
+    : '';
+  const text = p.text
+    ? `<p class="capsule-text">${linkify(p.text)}</p>`
+    : `<p class="capsule-text empty">Nessuna descrizione.</p>`;
+  const edited = p.updatedAt && p.updatedAt !== p.createdAt ? ` · modificata il ${fmtDate(p.updatedAt, true)}` : '';
+  const actions = (ctx.actions || []).map(x =>
+    `<button class="btn btn-sm ${x.cls || 'btn-ghost'}" data-act="${x.act}" type="button">${x.icon ? ui(x.icon, 16) : ''}${esc(x.label)}</button>`).join('');
+  return `
+    <article class="capsule">
+      <header class="capsule-author">
+        <div class="avatar" style="background:${a.bg};color:${a.fg}">${a.avatar}</div>
+        <div>
+          <div class="author-name">${esc(a.name)}</div>
+          ${a.sub ? `<div class="author-sub">${esc(a.sub)}</div>` : ''}
+        </div>
+        <button class="btn btn-ghost btn-icon close" data-act="close" type="button" aria-label="Chiudi">${ui('close')}</button>
+      </header>
+      <div class="capsule-main">
+        ${catHtml}
+        <h2 class="capsule-title">${esc(p.title)}</h2>
+        ${text}
+        ${p.imageFileId ? `<figure class="capsule-figure"><img alt="Immagine allegata: ${esc(p.title)}" data-img></figure>` : ''}
+      </div>
+      <div class="capsule-dates">${p._pending ? '<span class="pending-note">Salvataggio in corso…</span>' : `Aggiunta il ${fmtDate(p.createdAt, true)}${edited}`}</div>
+      ${actions ? `<footer class="capsule-foot">${actions}</footer>` : ''}
+    </article>`;
+}
+
+// Apre la capsula. onAction(act) riceve il nome dell'azione scelta.
+function openCapsule(p, ctx, onAction) {
+  const d = makeDialog(capsuleHtml(p, ctx));
+  const img = d.querySelector('[data-img]');
+  if (img) loadDriveImage(img, ctx.mapId, p.imageFileId, 1400);
+  d.addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) {
+      const act = btn.dataset.act;
+      d.close();
+      if (act !== 'close' && onAction) onAction(act);
+    } else if (e.target === d) {
+      d.close(); // clic sullo sfondo
+    }
+  });
+  d.showModal();
+  return d;
+}
+
+// ---------- Modulo per creare/modificare una puntina ----------
+// Restituisce una Promise con i campi, oppure null se annullato.
+function openPointForm(opts) {
+  const p = opts.point || opts.initial || {};
+  const cats = opts.categories || [];
+  let color = p.color || opts.defaultColor || DEFAULT_PIN_COLOR;
+  let categoryId = p.categoryId && catById(cats, p.categoryId) ? p.categoryId : '';
+  let newImage = opts.initialImage || null;
+  let removeImage = false;
+  const hasOldImage = !!p.imageFileId;
+
+  const catButtons = [`<button type="button" class="cat-choice" data-cat="" aria-pressed="${!categoryId}">Nessuna</button>`]
+    .concat(cats.map(c => `<button type="button" class="cat-choice" data-cat="${esc(c.id)}" aria-pressed="${c.id === categoryId}">${iconSvg(c.icon, 16)}${esc(c.name)}</button>`)).join('');
+  const inPalette = PIN_PALETTE.indexOf(color) !== -1;
+  const swatches = PIN_PALETTE.map(c => `<button type="button" class="swatch" data-color="${c}" style="background:${c}" aria-label="Colore ${c}" aria-pressed="${c === color}"></button>`).join('');
+
+  const d = makeDialog(`
+    <form method="dialog" novalidate>
+      <div class="dlg-head">
+        <span class="form-pin-preview" data-preview></span>
+        <h2>${opts.point ? 'Modifica puntina' : 'Nuova puntina'}</h2>
+      </div>
+      <div class="dlg-body">
+        <label class="field"><span class="label">Titolo</span>
+          <input class="input" name="title" maxlength="120" required value="${esc(p.title || '')}" autocomplete="off"></label>
+        ${cats.length ? `<div class="field"><span class="label">Categoria</span><div class="cat-choices">${catButtons}</div></div>` : ''}
+        <div class="field"><span class="label">Colore</span>
+          <div class="swatches">${swatches}
+            <label class="swatch-custom${inPalette ? '' : ' on'}"><input type="color" name="custom" value="${color}" aria-label="Altro colore">Altro</label>
+          </div></div>
+        <label class="field"><span class="label">Descrizione</span>
+          <textarea class="input" name="text" maxlength="3000">${esc(p.text || '')}</textarea></label>
+        <div class="field"><span class="label">Immagine (facoltativa)</span>
+          <input type="file" name="image" accept="image/*">
+          <div class="img-preview" data-imgbox ${hasOldImage || newImage ? '' : 'hidden'}>
+            <img data-imgprev alt="Anteprima">
+            <button type="button" class="btn btn-sm btn-danger-ghost" data-rmimg>Togli immagine</button>
+          </div></div>
+        ${opts.askName ? `<label class="field"><span class="label">Il tuo nome (facoltativo)</span>
+          <input class="input" name="authorName" maxlength="40" value="${esc(p.authorName != null && (opts.point || opts.initial) ? p.authorName : (opts.nameDefault || ''))}" autocomplete="off">
+          <span class="hint">${esc(opts.nameHint || '')}</span></label>` : ''}
+        <p class="err" data-err>${esc(opts.errorMsg || '')}</p>
+      </div>
+      <div class="dlg-foot">
+        <button class="btn btn-ghost" value="cancel" type="button" data-cancel>Annulla</button>
+        <button class="btn" type="submit" data-save>${opts.point ? 'Salva modifiche' : 'Salva puntina'}</button>
+      </div>
+    </form>`);
+
+  const form = d.querySelector('form');
+  const preview = d.querySelector('[data-preview]');
+  const imgBox = d.querySelector('[data-imgbox]');
+  const imgPrev = d.querySelector('[data-imgprev]');
+  const errEl = d.querySelector('[data-err]');
+  const customInput = form.elements.custom;
+
+  function refreshPreview() {
+    const cat = catById(cats, categoryId);
+    preview.innerHTML = pinSvg(color, cat && cat.icon);
+    d.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', String(s.dataset.color === color)));
+    d.querySelectorAll('.cat-choice').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === categoryId)));
+    if (customInput.value !== color) customInput.value = color;
+    customInput.parentElement.classList.toggle('on', PIN_PALETTE.indexOf(color) === -1);
+    if (opts.onStyle) opts.onStyle(color, cat && cat.icon);
+  }
+  refreshPreview();
+  if (newImage) imgPrev.src = newImage.dataUrl;
+  else if (hasOldImage) loadDriveImage(imgPrev, opts.mapId, p.imageFileId, 400);
+
+  d.addEventListener('click', e => {
+    const sw = e.target.closest('.swatch');
+    if (sw) { color = sw.dataset.color; refreshPreview(); return; }
+    const cb = e.target.closest('.cat-choice');
+    if (cb) { categoryId = cb.dataset.cat; refreshPreview(); return; }
+    if (e.target.closest('[data-rmimg]')) {
+      newImage = null; removeImage = hasOldImage;
+      form.elements.image.value = '';
+      imgBox.hidden = true;
+      return;
+    }
+    if (e.target.closest('[data-cancel]')) d.close();
+  });
+  customInput.addEventListener('input', () => { color = customInput.value.toLowerCase(); refreshPreview(); });
+  form.elements.image.addEventListener('change', async () => {
+    const file = form.elements.image.files[0];
+    if (!file) return;
+    errEl.textContent = 'Preparo l\'immagine…';
+    try {
+      newImage = await prepareImage(file, 1400, 0.82);
+      removeImage = false;
+      imgPrev.src = newImage.dataUrl;
+      imgBox.hidden = false;
+      errEl.textContent = '';
+    } catch (err) {
+      newImage = null;
+      form.elements.image.value = '';
+      errEl.textContent = err.message;
+    }
+  });
+
+  return new Promise(resolve => {
+    let result = null;
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const title = form.elements.title.value.trim();
+      if (!title) { errEl.textContent = 'Scrivi un titolo.'; form.elements.title.focus(); return; }
+      const fields = {
+        title: title,
+        text: form.elements.text.value,
+        categoryId: categoryId,
+        color: color
+      };
+      if (opts.askName) fields.authorName = form.elements.authorName.value.trim();
+      if (newImage) fields.image = { base64: newImage.base64, mime: newImage.mime };
+      fields._imageObj = newImage;
+      if (removeImage) fields.removeImage = true;
+      if (!opts.onSubmit) { result = fields; d.close(); return; }
+      const btn = d.querySelector('[data-save]');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio…';
+      errEl.textContent = '';
+      try {
+        result = await opts.onSubmit(fields);
+        d.close();
+      } catch (err) {
+        errEl.textContent = err.message;
+        btn.disabled = false;
+        btn.textContent = opts.point ? 'Salva modifiche' : 'Salva puntina';
+      }
+    });
+    d.addEventListener('close', () => resolve(result));
+    d.showModal();
+    if (!opts.point) setTimeout(() => form.elements.title.focus(), 30);
+  });
+}
+
+// ---------- Visualizzatore della carta con zoom e spostamento ----------
+class MapViewer {
+  constructor(el, handlers) {
+    this.el = el;
+    this.h = handlers || {};
+    this.W = 0; this.H = 0;
+    this.s = 1; this.tx = 0; this.ty = 0;
+    this.fitScale = 1;
+    this.atFit = true;
+    this.placing = false;
+    this.pointers = new Map();
+    this.gesture = null;
+    this.activeId = null;
+
+    el.classList.add('viewer');
+    el.tabIndex = 0;
+    el.innerHTML = `
+      <div class="stage"><img class="map-img" alt="" draggable="false"><div class="pins"></div></div>
+      <div class="viewer-empty" hidden></div>
+      <div class="viewer-controls">
+        <button type="button" data-z="in" aria-label="Ingrandisci">${ui('plus')}</button>
+        <button type="button" data-z="out" aria-label="Rimpicciolisci">${ui('minus')}</button>
+        <button type="button" data-z="fit" aria-label="Mostra tutta la carta">${ui('fit')}</button>
+      </div>`;
+    this.stage = el.querySelector('.stage');
+    this.img = el.querySelector('.map-img');
+    this.pinsEl = el.querySelector('.pins');
+    this.emptyEl = el.querySelector('.viewer-empty');
+
+    el.querySelector('.viewer-controls').addEventListener('click', e => {
+      const b = e.target.closest('[data-z]');
+      if (!b) return;
+      const r = this.el.getBoundingClientRect();
+      if (b.dataset.z === 'fit') this.fit(true);
+      else this.zoomAt(b.dataset.z === 'in' ? 1.5 : 1 / 1.5, r.width / 2, r.height / 2, true);
+    });
+    el.addEventListener('pointerdown', e => this._down(e));
+    el.addEventListener('pointermove', e => this._move(e));
+    el.addEventListener('pointerup', e => this._up(e));
+    el.addEventListener('pointercancel', e => this._up(e, true));
+    el.addEventListener('wheel', e => {
+      if (!this.W) return;
+      e.preventDefault();
+      const r = this.el.getBoundingClientRect();
+      this.zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
+    el.addEventListener('keydown', e => {
+      const step = 60;
+      const map = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+      if (e.target !== el) return;
+      if (map[e.key]) { e.preventDefault(); this.tx += map[e.key][0]; this.ty += map[e.key][1]; this.atFit = false; this._apply(); }
+      else if (e.key === '+' || e.key === '=') { const r = el.getBoundingClientRect(); this.zoomAt(1.3, r.width / 2, r.height / 2, true); }
+      else if (e.key === '-') { const r = el.getBoundingClientRect(); this.zoomAt(1 / 1.3, r.width / 2, r.height / 2, true); }
+    });
+    // Tastiera sulle puntine: il clic del mouse è gestito dai gesti, qui solo Invio/Spazio.
+    this.pinsEl.addEventListener('click', e => {
+      const b = e.target.closest('.pin-btn');
+      if (b && e.detail === 0 && this.h.onPinTap) this.h.onPinTap(b.dataset.id);
+    });
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => { if (this.W) { this._computeFit(); if (this.atFit) this.fit(); else this._apply(); } }).observe(el);
+    }
+  }
+
+  showMessage(text) {
+    this.emptyEl.textContent = text;
+    this.emptyEl.hidden = !text;
+    this.stage.hidden = !!text;
+  }
+
+  // Carica l'immagine della carta. w/h servono a impaginare prima del caricamento.
+  setImage(mapId, fileId, w, h) {
+    this.showMessage('');
+    if (w && h) this._setSize(w, h);
+    return new Promise(resolve => {
+      this.img.onload = () => {
+        if (!w || !h || Math.abs(this.img.naturalWidth / this.img.naturalHeight - w / h) > 0.02) {
+          this._setSize(this.img.naturalWidth, this.img.naturalHeight);
+        }
+        resolve(true);
+      };
+      this.img.addEventListener('maplab-failed', () => { this.showMessage('Non riesco a caricare la carta. Riprova più tardi.'); resolve(false); }, { once: true });
+      loadDriveImage(this.img, mapId, fileId, 3000);
+    });
+  }
+
+  _setSize(w, h) {
+    const first = !this.W;
+    this.W = w; this.H = h;
+    this.stage.style.width = w + 'px';
+    this.stage.style.height = h + 'px';
+    this._computeFit();
+    if (first || this.atFit) this.fit();
+  }
+
+  _computeFit() {
+    const r = this.el.getBoundingClientRect();
+    if (!this.W || !r.width || !r.height) return;
+    this.fitScale = Math.min(r.width / this.W, r.height / this.H) * 0.96;
+    this.minScale = this.fitScale * 0.7;
+    this.maxScale = Math.max(this.fitScale * 8, 2.5);
+  }
+
+  fit(animate) {
+    const r = this.el.getBoundingClientRect();
+    this._computeFit();
+    this.s = this.fitScale;
+    this.tx = (r.width - this.W * this.s) / 2;
+    this.ty = (r.height - this.H * this.s) / 2;
+    this.atFit = true;
+    this._apply(animate);
+  }
+
+  zoomAt(factor, cx, cy, animate) {
+    if (!this.W) return;
+    const s2 = Math.max(this.minScale, Math.min(this.maxScale, this.s * factor));
+    this.tx = cx - (cx - this.tx) * (s2 / this.s);
+    this.ty = cy - (cy - this.ty) * (s2 / this.s);
+    this.s = s2;
+    this.atFit = false;
+    this._apply(animate);
+  }
+
+  focusPoint(x, y, animate) {
+    const r = this.el.getBoundingClientRect();
+    this.s = Math.max(this.s, Math.min(this.maxScale, this.fitScale * 2.2));
+    this.tx = r.width / 2 - x * this.W * this.s;
+    this.ty = r.height / 2 - y * this.H * this.s + 20;
+    this.atFit = false;
+    this._apply(animate);
+  }
+
+  _clamp() {
+    const r = this.el.getBoundingClientRect();
+    const keep = 80;
+    this.tx = Math.min(r.width - keep, Math.max(keep - this.W * this.s, this.tx));
+    this.ty = Math.min(r.height - keep, Math.max(keep - this.H * this.s, this.ty));
+  }
+
+  _apply(animate) {
+    this._clamp();
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (animate && !reduce) {
+      this.stage.classList.add('animating');
+      clearTimeout(this._animT);
+      this._animT = setTimeout(() => this.stage.classList.remove('animating'), 380);
+    }
+    this.stage.style.transform = `translate(${this.tx}px, ${this.ty}px) scale(${this.s})`;
+    this.stage.style.setProperty('--inv', String(1 / this.s));
+  }
+
+  setPlacing(on) {
+    this.placing = !!on;
+    this.el.classList.toggle('placing', this.placing);
+  }
+
+  // points: puntine da mostrare; categories per le icone.
+  setPins(points, categories) {
+    const html = points.map(p => {
+      const cat = catById(categories, p.categoryId);
+      return `<div class="pin${p.id === this.activeId ? ' is-active' : ''}${p._pending ? ' pending' : ''}" style="left:${p.x * 100}%;top:${p.y * 100}%">
+        <button type="button" class="pin-btn" data-id="${esc(p.id)}" title="${esc(p.title)}" aria-label="${esc(p.title)}">${pinSvg(p.color, cat && cat.icon)}</button></div>`;
+    }).join('');
+    this.pinsEl.innerHTML = html + (this.ghost ? this._ghostHtml() : '');
+  }
+
+  setActive(id) {
+    this.activeId = id;
+    this.pinsEl.querySelectorAll('.pin').forEach(el => {
+      const b = el.querySelector('.pin-btn');
+      el.classList.toggle('is-active', !!b && b.dataset.id === id);
+    });
+  }
+
+  showGhost(x, y, color, icon) {
+    this.ghost = { x: x, y: y, color: color, icon: icon };
+    const old = this.pinsEl.querySelector('.pin.ghost');
+    if (old) old.remove();
+    this.pinsEl.insertAdjacentHTML('beforeend', this._ghostHtml());
+  }
+
+  hideGhost() {
+    this.ghost = null;
+    const old = this.pinsEl.querySelector('.pin.ghost');
+    if (old) old.remove();
+  }
+
+  _ghostHtml() {
+    const g = this.ghost;
+    return `<div class="pin ghost is-active" style="left:${g.x * 100}%;top:${g.y * 100}%"><span class="pin-btn">${pinSvg(g.color, g.icon)}</span></div>`;
+  }
+
+  _down(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (e.target.closest('.viewer-controls')) return;
+    if (!this.W) return;
+    try { this.el.setPointerCapture(e.pointerId); } catch (err) { /* ignorato */ }
+    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.pointers.size === 1) {
+      this.gesture = { type: 'pan', x0: e.clientX, y0: e.clientY, tx: this.tx, ty: this.ty, target: e.target, moved: false };
+    } else if (this.pointers.size === 2) {
+      const [a, b] = [...this.pointers.values()];
+      const r = this.el.getBoundingClientRect();
+      this.gesture = {
+        type: 'pinch', moved: true,
+        d0: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top,
+        s: this.s, tx: this.tx, ty: this.ty
+      };
+    }
+  }
+
+  _move(e) {
+    if (!this.pointers.has(e.pointerId)) return;
+    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const g = this.gesture;
+    if (!g) return;
+    if (g.type === 'pan' && this.pointers.size === 1) {
+      const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+      if (!g.moved && Math.hypot(dx, dy) > 6) { g.moved = true; this.el.classList.add('dragging'); }
+      if (g.moved) { this.tx = g.tx + dx; this.ty = g.ty + dy; this.atFit = false; this._apply(); }
+    } else if (g.type === 'pinch' && this.pointers.size >= 2) {
+      const [a, b] = [...this.pointers.values()];
+      const r = this.el.getBoundingClientRect();
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+      const s2 = Math.max(this.minScale, Math.min(this.maxScale, g.s * d / g.d0));
+      const wx = (g.mx - g.tx) / g.s, wy = (g.my - g.ty) / g.s;
+      this.s = s2; this.tx = mx - wx * s2; this.ty = my - wy * s2;
+      this.atFit = false;
+      this._apply();
+    }
+  }
+
+  _up(e, cancelled) {
+    if (!this.pointers.has(e.pointerId)) return;
+    this.pointers.delete(e.pointerId);
+    const g = this.gesture;
+    if (this.pointers.size === 1 && g && g.type === 'pinch') {
+      // Da due dita a una: si continua a spostare, senza tocchi accidentali.
+      const [p] = [...this.pointers.values()];
+      this.gesture = { type: 'pan', x0: p.x, y0: p.y, tx: this.tx, ty: this.ty, target: null, moved: true };
+      return;
+    }
+    if (this.pointers.size > 0) return;
+    this.el.classList.remove('dragging');
+    this.gesture = null;
+    if (cancelled || !g || g.moved) return;
+    // È un tocco semplice.
+    const pinBtn = g.target && g.target.closest && g.target.closest('.pin-btn[data-id]');
+    if (pinBtn && !this.placing) {
+      if (this.h.onPinTap) this.h.onPinTap(pinBtn.dataset.id);
+      return;
+    }
+    const r = this.el.getBoundingClientRect();
+    const x = (e.clientX - r.left - this.tx) / (this.W * this.s);
+    const y = (e.clientY - r.top - this.ty) / (this.H * this.s);
+    if (x < 0 || x > 1 || y < 0 || y > 1) return;
+    if (this.h.onMapTap) this.h.onMapTap(x, y);
+  }
+}
+
+
+// ===================== PAGINA STUDENTI =====================
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const state = {
+  mapId: params.get('m') || '',
+  code: '',
+  ident: null,        // {classId, className, n, kind, active}
+  blockReason: '',    // perché non si può scrivere ('' = si può)
+  data: null,         // {map, classNames, points}
+  placing: null,      // {mode:'add'} | {mode:'move', point}
+  hiddenCats: new Set(),
+  onlyMine: false,
+  query: '',
+  retryAdd: null      // puntina da riproporre se il salvataggio è fallito
+};
+
+const queue = new SyncQueue({
+  onStatus: saveIndicator(document.getElementById('saveStatus')),
+  onIdle: async ({ failed, data }) => {
+    if (failed) {
+      await reloadNow();
+      const r = state.retryAdd;
+      state.retryAdd = null;
+      if (r && canWrite()) addPointForm(r.x, r.y, r.fields, 'La puntina non è stata salvata. Controlla e riprova.');
+    } else if (data && data.map.id === state.mapId) {
+      state.data = data;
+      renderMapUi();
+    }
+  }
+});
+
+// Codice arrivato da QR: lo tengo per la sessione e lo tolgo dall'indirizzo.
+(function readCodeFromUrl() {
+  const c = params.get('c');
+  if (c) {
+    try { sessionStorage.setItem('maplab_code', c); } catch (e) { state.code = c; }
+    params.delete('c');
+    const q = params.toString();
+    history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
+  }
+  try { state.code = state.code || sessionStorage.getItem('maplab_code') || ''; } catch (e) { /* niente */ }
+})();
+
+function saveCode(code) {
+  state.code = code;
+  try { code ? sessionStorage.setItem('maplab_code', code) : sessionStorage.removeItem('maplab_code'); } catch (e) { /* niente */ }
+}
+function savedName() { try { return sessionStorage.getItem('maplab_name') || ''; } catch (e) { return ''; } }
+function saveName(n) { try { sessionStorage.setItem('maplab_name', n); } catch (e) { /* niente */ } }
+
+$('btnPanelClose').innerHTML = ui('close');
+$('btnList').innerHTML = ui('list') + 'Elenco';
+$('btnAdd').innerHTML = ui('plus', 20) + 'Aggiungi puntina';
+
+// ---------- Chi sono ----------
+function identityLabel(ident) {
+  if (!ident) return '';
+  return ident.kind === 'student' ? `${ident.className} — n. ${ident.n}` : `Classe ${ident.className}`;
+}
+
+function renderWho() {
+  const who = $('who');
+  if (state.ident) {
+    const av = state.ident.kind === 'student' ? esc(String(state.ident.n)) : ui('users', 16);
+    who.innerHTML = `<span class="who-chip" title="${esc(identityLabel(state.ident))}"><span class="avatar small">${av}</span><span class="who-text">${esc(identityLabel(state.ident))}</span></span>
+      <button class="btn btn-ghost btn-sm" id="btnLogout" type="button">Esci</button>`;
+    $('btnLogout').onclick = logout;
+  } else {
+    who.innerHTML = `<button class="btn btn-ghost btn-sm" id="btnLogin" type="button">Entra con codice</button>`;
+    $('btnLogin').onclick = () => askCode();
+  }
+}
+
+function logout() {
+  saveCode('');
+  state.ident = null;
+  state.blockReason = '';
+  state.onlyMine = false;
+  toast('Sei uscito. Puoi ancora consultare la mappa.');
+  if (state.mapId) { renderWho(); renderMapUi(); } else { showStart(); }
+}
+
+// Chiede il codice. Restituisce true se l'accesso è riuscito.
+function askCode() {
+  return new Promise(resolve => {
+    const d = makeDialog(`
+      <form novalidate>
+        <div class="dlg-head"><h2>Entra con il tuo codice</h2></div>
+        <div class="dlg-body">
+          <label class="field"><span class="label">Codice</span>
+            <input class="input code-input" name="code" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+          <p class="err" data-err></p>
+        </div>
+        <div class="dlg-foot"><button class="btn btn-ghost" type="button" data-cancel>Annulla</button><button class="btn" type="submit">Entra</button></div>
+      </form>`);
+    let ok = false;
+    const form = d.querySelector('form');
+    d.querySelector('[data-cancel]').onclick = () => d.close();
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const err = d.querySelector('[data-err]');
+      const code = form.elements.code.value.trim();
+      if (!code) { err.textContent = 'Scrivi il codice.'; return; }
+      err.textContent = 'Controllo…';
+      try {
+        await login(code);
+        ok = true;
+        d.close();
+      } catch (ex) { err.textContent = ex.message; }
+    };
+    d.addEventListener('close', () => resolve(ok));
+    d.showModal();
+  });
+}
+
+async function login(code) {
+  const res = await api('verifyCode', { code: code, mapId: state.mapId || undefined });
+  saveCode(code);
+  state.ident = res.identity;
+  state.blockReason = res.blockReason || '';
+  renderWho();
+  if (state.mapId) {
+    renderMapUi();
+    if (state.blockReason) toast(state.blockReason, 'err');
+    else toast('Ciao! Ora puoi aggiungere puntine.', 'ok');
+  } else {
+    await showHub();
+  }
+}
+
+// ---------- Schermate ----------
+function show(id) {
+  ['screenMap', 'screenHub', 'screenStart'].forEach(s => { $(s).hidden = s !== id; });
+}
+
+function showStart() {
+  show('screenStart');
+  $('mapTitle').textContent = '';
+  $('titleSep').hidden = true;
+  $('lockChip').hidden = true;
+  renderWho();
+  const form = $('startForm');
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const code = form.elements.code.value.trim();
+    if (!code) { $('startErr').textContent = 'Scrivi il codice.'; return; }
+    $('startErr').textContent = 'Controllo…';
+    try { await login(code); $('startErr').textContent = ''; } catch (ex) { $('startErr').textContent = ex.message; }
+  };
+}
+
+async function showHub() {
+  show('screenHub');
+  $('hubCards').innerHTML = '<div class="spinner"></div>';
+  try {
+    const res = await api('listMapsForCode', { code: state.code });
+    state.ident = res.identity;
+    renderWho();
+    $('hubTitle').textContent = `Le mappe della ${res.identity.className}`;
+    $('hubLead').textContent = res.maps.length
+      ? 'Scegli una mappa da aprire.'
+      : 'Per ora l\'insegnante non ha ancora aperto mappe per la tua classe.';
+    $('hubCards').innerHTML = res.maps.map(m => `
+      <a class="map-card" href="?m=${encodeURIComponent(m.id)}">
+        ${m.imageFileId ? `<img class="thumb" alt="" data-map="${esc(m.id)}" data-file="${esc(m.imageFileId)}">` : '<span class="thumb"></span>'}
+        <span class="body">
+          <h3>${esc(m.title)}</h3>
+          ${m.description ? `<p>${esc(m.description)}</p>` : ''}
+          <span class="btn-row"><span class="chip">${m.pointCount} puntine</span>${m.locked ? '<span class="chip closed">Solo consultazione</span>' : ''}</span>
+        </span>
+      </a>`).join('');
+    $('hubCards').querySelectorAll('img[data-file]').forEach(img => loadDriveImage(img, img.dataset.map, img.dataset.file, 600));
+  } catch (e) {
+    saveCode('');
+    state.ident = null;
+    toast(e.message, 'err');
+    showStart();
+  }
+}
+
+// ---------- Mappa ----------
+const viewer = new MapViewer($('viewer'), {
+  onPinTap: id => openPoint(id),
+  onMapTap: (x, y) => onMapTap(x, y)
+});
+
+async function showMap() {
+  show('screenMap');
+  $('titleSep').hidden = false;
+  if (window.innerWidth <= 760) $('screenMap').classList.add('panel-closed');
+  renderWho();
+  viewer.showMessage('Caricamento della mappa…');
+  try {
+    state.data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
+  } catch (e) {
+    viewer.showMessage(e.message);
+    return;
+  }
+  const map = state.data.map;
+  document.title = map.title + ' — MapLab';
+  if (map.imageFileId) viewer.setImage(state.mapId, map.imageFileId, map.imageW, map.imageH);
+  else viewer.showMessage('L\'insegnante non ha ancora caricato la carta.');
+  adoptIdentity(state.data);
+  renderWho();
+  renderMapUi();
+  setInterval(refresh, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+}
+
+// Identità e permessi arrivano insieme alla mappa quando c'è un codice.
+function adoptIdentity(data) {
+  if (!state.code) return;
+  if (data.codeError) {
+    saveCode('');
+    state.ident = null;
+    state.blockReason = '';
+    toast('Il codice salvato non è più valido: entra di nuovo.', 'err');
+    renderWho();
+    return;
+  }
+  if (data.identity) {
+    state.ident = data.identity;
+    state.blockReason = data.blockReason || '';
+  }
+}
+
+async function refresh() {
+  if (document.hidden || anyDialogOpen() || state.placing || !state.data || queue.pending) return;
+  try {
+    const data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
+    if (queue.pending || state.placing) return; // nel frattempo è cambiato qualcosa qui
+    const imageChanged = data.map.imageFileId !== state.data.map.imageFileId;
+    state.data = data;
+    adoptIdentity(data);
+    if (imageChanged && data.map.imageFileId) viewer.setImage(state.mapId, data.map.imageFileId, data.map.imageW, data.map.imageH);
+    renderMapUi();
+  } catch (e) { /* riproverò al prossimo giro */ }
+}
+
+function canWrite() { return !!state.ident && !state.blockReason; }
+function isMine(p) {
+  return !!state.ident && state.ident.kind === 'student' && p.classId === state.ident.classId && p.codeN === state.ident.n;
+}
+function canEdit(p) { return canWrite() && isMine(p); }
+
+function renderMapUi() {
+  const map = state.data.map;
+  $('mapTitle').textContent = map.title;
+  $('mapDesc').textContent = map.description || '';
+  $('mapDesc').hidden = !map.description;
+
+  const closed = map.archived || map.locked || !map.classIds.length;
+  $('lockChip').hidden = !closed;
+  $('lockChip').innerHTML = ui('lock', 14) + 'Solo consultazione';
+
+  // Pulsante "Aggiungi": visibile se la mappa accetta modifiche.
+  $('btnAdd').hidden = closed || !!state.placing;
+  const note = $('statusNote');
+  if (!closed && state.ident && state.blockReason) {
+    note.textContent = state.blockReason;
+    note.className = 'status-note notice warn';
+    note.hidden = false;
+  } else {
+    note.hidden = true;
+  }
+  renderFilters();
+  renderPins();
+}
+
+function visiblePoints() {
+  const q = state.query.toLowerCase();
+  return state.data.points.filter(p => {
+    const catKey = catById(state.data.map.categories, p.categoryId) ? p.categoryId : '';
+    if (state.hiddenCats.has(catKey)) return false;
+    if (state.onlyMine && !isMine(p)) return false;
+    if (q && (p.title + ' ' + p.text + ' ' + (p.authorName || '')).toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+}
+
+function renderFilters() {
+  const cats = state.data.map.categories;
+  const counts = {};
+  state.data.points.forEach(p => {
+    const k = catById(cats, p.categoryId) ? p.categoryId : '';
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  const items = cats.map(c => ({ key: c.id, name: c.name, icon: c.icon }));
+  if (counts['']) items.push({ key: '', name: 'Senza categoria', icon: '' });
+  let html = items.map(c => `<button type="button" class="filter" data-cat="${esc(c.key)}" aria-pressed="${!state.hiddenCats.has(c.key)}">${c.icon ? iconSvg(c.icon, 15) : ui('pin', 15)}${esc(c.name)} <span class="n">${counts[c.key] || 0}</span></button>`).join('');
+  if (state.ident && state.ident.kind === 'student') {
+    const mine = state.data.points.filter(isMine).length;
+    html += `<button type="button" class="filter" data-mine aria-pressed="${state.onlyMine}" style="${state.onlyMine ? '' : 'opacity:1;text-decoration:none'}">Solo le mie <span class="n">${mine}</span></button>`;
+  }
+  $('filters').innerHTML = html;
+}
+
+$('filters').addEventListener('click', e => {
+  const b = e.target.closest('.filter');
+  if (!b) return;
+  if (b.hasAttribute('data-mine')) state.onlyMine = !state.onlyMine;
+  else {
+    const k = b.dataset.cat;
+    state.hiddenCats.has(k) ? state.hiddenCats.delete(k) : state.hiddenCats.add(k);
+  }
+  renderFilters();
+  renderPins();
+});
+$('search').addEventListener('input', e => { state.query = e.target.value.trim(); renderPins(); });
+
+function renderPins() {
+  const pts = visiblePoints();
+  const cats = state.data.map.categories;
+  viewer.setPins(pts, cats);
+  $('pinCount').textContent = `(${state.data.points.length})`;
+  const sorted = pts.slice().sort((a, b) => a.title.localeCompare(b.title, 'it'));
+  $('pinList').innerHTML = sorted.length ? sorted.map(p => {
+    const cat = catById(cats, p.categoryId);
+    const a = authorInfo(p, state.data.classNames, false);
+    return `<li><button class="pin-item" type="button" data-id="${esc(p.id)}">
+      <span class="pi-pin">${pinSvg(p.color, cat && cat.icon)}</span>
+      <span><span class="pi-title">${esc(p.title)}</span><br><span class="pi-sub">${esc(a.name)}${cat ? ' — ' + esc(cat.name) : ''}</span></span>
+    </button></li>`;
+  }).join('') : `<li class="empty">${state.data.points.length ? 'Nessuna puntina corrisponde ai filtri.' : 'Ancora nessuna puntina su questa mappa.'}</li>`;
+}
+
+$('pinList').addEventListener('click', e => {
+  const b = e.target.closest('.pin-item');
+  if (!b) return;
+  const p = state.data.points.find(x => x.id === b.dataset.id);
+  if (!p) return;
+  if (window.innerWidth <= 760) $('screenMap').classList.add('panel-closed');
+  viewer.focusPoint(p.x, p.y, true);
+  openPoint(p.id);
+});
+
+$('btnList').onclick = () => $('screenMap').classList.toggle('panel-closed');
+$('btnPanelClose').onclick = () => $('screenMap').classList.add('panel-closed');
+
+function openPoint(id) {
+  const p = state.data.points.find(x => x.id === id);
+  if (!p) return;
+  viewer.setActive(id);
+  const actions = canEdit(p) ? [
+    { act: 'edit', label: 'Modifica', icon: 'edit' },
+    { act: 'move', label: 'Sposta', icon: 'move' },
+    { act: 'delete', label: 'Elimina', icon: 'trash', cls: 'btn-danger-ghost' }
+  ] : [];
+  const d = openCapsule(p, { categories: state.data.map.categories, classNames: state.data.classNames, mapId: state.mapId, actions: actions }, act => {
+    if (act === 'edit') editPoint(p);
+    if (act === 'move') startPlacing({ mode: 'move', point: p });
+    if (act === 'delete') removePoint(p);
+  });
+  d.addEventListener('close', () => { if (!state.placing) viewer.setActive(null); });
+}
+
+// ---------- Aggiungere, spostare, modificare ----------
+$('btnAdd').onclick = async () => {
+  if (!state.ident) {
+    const ok = await askCode();
+    if (!ok) return;
+  }
+  if (state.blockReason) { toast(state.blockReason, 'err'); return; }
+  startPlacing({ mode: 'add' });
+};
+
+function startPlacing(mode, silent) {
+  state.placing = mode;
+  if (silent) { viewer.setPlacing(true); $('btnAdd').hidden = true; return; }
+  viewer.setPlacing(true);
+  $('btnAdd').hidden = true;
+  const banner = document.createElement('div');
+  banner.className = 'placing-banner';
+  banner.id = 'placingBanner';
+  banner.innerHTML = `<span>${mode.mode === 'add' ? 'Tocca il punto della carta dove mettere la puntina' : 'Tocca la nuova posizione della puntina'}</span><button class="btn btn-sm" type="button">Annulla</button>`;
+  banner.querySelector('button').onclick = stopPlacing;
+  document.querySelector('.map-area').appendChild(banner);
+  if (window.innerWidth <= 760) $('screenMap').classList.add('panel-closed');
+}
+
+function stopPlacing() {
+  state.placing = null;
+  viewer.setPlacing(false);
+  viewer.hideGhost();
+  viewer.setActive(null);
+  const b = $('placingBanner');
+  if (b) b.remove();
+  renderMapUi();
+}
+
+async function onMapTap(x, y) {
+  const mode = state.placing;
+  if (!mode) return;
+  if (mode.mode === 'move') {
+    const p = state.data.points.find(q => q.id === mode.point.id);
+    stopPlacing();
+    if (!p) return;
+    p.x = x; p.y = y; p._pending = true;
+    renderPins();
+    queue.push({ label: 'Spostamento', run: () => api('updatePoint', { mapId: state.mapId, code: state.code, pointId: p.id, x: x, y: y }) });
+    return;
+  }
+  addPointForm(x, y);
+}
+
+// Modulo per una nuova puntina. Alla conferma la puntina compare subito
+// e viene salvata in sottofondo; se il salvataggio fallisce il modulo
+// si riapre con quello che lo studente aveva scritto.
+async function addPointForm(x, y, initial, errorMsg) {
+  if (!state.placing) startPlacing({ mode: 'add' }, true);
+  viewer.showGhost(x, y, (initial && initial.color) || state.data.map.defaultColor, null);
+  const hint = state.ident.kind === 'student'
+    ? `Se lo lasci vuoto comparirà "Studente n. ${state.ident.n}".`
+    : `Se lo lasci vuoto comparirà "Classe ${state.ident.className}".`;
+  const saved = await openPointForm({
+    categories: state.data.map.categories,
+    defaultColor: state.data.map.defaultColor,
+    mapId: state.mapId,
+    initial: initial, initialImage: initial && initial._imageObj, errorMsg: errorMsg,
+    askName: true, nameDefault: savedName(), nameHint: hint,
+    onStyle: (color, icon) => viewer.showGhost(x, y, color, icon),
+    onSubmit: fields => {
+      const { _imageObj, ...send } = fields;
+      saveName(fields.authorName || '');
+      const id = newId(12);
+      const now = nowIso();
+      const p = applyFieldsLocally({
+        id: id, x: x, y: y, classId: state.ident.classId, className: state.ident.className,
+        codeN: state.ident.n, byTeacher: false, createdAt: now, imageFileId: ''
+      }, send);
+      p.createdAt = p.updatedAt;
+      state.data.points.push(p);
+      const localImg = p.imageFileId ? imageCache[p.imageFileId] : null;
+      queue.push({
+        label: 'Puntina "' + p.title + '"',
+        run: () => api('addPoint', Object.assign({ mapId: state.mapId, code: state.code, x: x, y: y, pointId: id }, send)),
+        onSuccess: res => { if (localImg && res.point.imageFileId) imageCache[res.point.imageFileId] = localImg; },
+        onError: () => { state.retryAdd = { x: x, y: y, fields: fields }; }
+      });
+      return true;
+    }
+  });
+  stopPlacing();
+  if (saved && state.ident && state.ident.kind === 'class') toast('Con il codice di classe non potrai modificarla in seguito.');
+}
+
+async function editPoint(p) {
+  await openPointForm({
+    point: p,
+    categories: state.data.map.categories,
+    defaultColor: state.data.map.defaultColor,
+    mapId: state.mapId,
+    askName: true, nameHint: `Se lo lasci vuoto comparirà "Studente n. ${p.codeN}".`,
+    onSubmit: fields => {
+      const { _imageObj, ...send } = fields;
+      const cur = state.data.points.find(q => q.id === p.id);
+      if (!cur) return true;
+      const localImg = send.image ? 'data:' + send.image.mime + ';base64,' + send.image.base64 : null;
+      applyFieldsLocally(cur, send);
+      renderPins();
+      queue.push({
+        label: 'Modifica',
+        run: () => api('updatePoint', Object.assign({ mapId: state.mapId, code: state.code, pointId: p.id }, send)),
+        onSuccess: res => { if (localImg && res.point.imageFileId) imageCache[res.point.imageFileId] = localImg; }
+      });
+      return true;
+    }
+  });
+}
+
+async function removePoint(p) {
+  const yes = await confirmBox(`Vuoi eliminare la puntina "${p.title}"? Non si potrà recuperare.`, { title: 'Elimina puntina', ok: 'Elimina', danger: true });
+  if (!yes) return;
+  state.data.points = state.data.points.filter(q => q.id !== p.id);
+  renderMapUi();
+  queue.push({ label: 'Eliminazione', run: () => api('deletePoint', { mapId: state.mapId, code: state.code, pointId: p.id }) });
+}
+
+async function reloadNow() {
+  try {
+    const data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
+    state.data = data;
+    adoptIdentity(data);
+    renderMapUi();
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ---------- Avvio ----------
+if (state.mapId) showMap();
+else if (state.code) showHub();
+else showStart();
+</script>
+</body>
+</html>

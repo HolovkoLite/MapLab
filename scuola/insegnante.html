@@ -3039,6 +3039,17 @@ function loadDriveImage(img, mapId, fileId, size) {
   img.src = url;
 }
 
+// Memoria dei dati già ricevuti: le schermate compaiono subito e si aggiornano dopo.
+function readSaved(storage, key) {
+  try { const v = storage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+}
+function writeSaved(storage, key, value) {
+  try { storage.setItem(key, JSON.stringify(value)); } catch (e) { /* spazio finito o memoria non disponibile */ }
+}
+function clearSaved(storage, prefix) {
+  try { Object.keys(storage).forEach(k => { if (k.indexOf(prefix) === 0) storage.removeItem(k); }); } catch (e) { /* niente */ }
+}
+
 // Miniatura per gli elenchi (circa 480 px): si carica in un attimo.
 function prepareThumb(file) {
   return prepareImage(file, 480, 0.75).then(t => ({ base64: t.base64, mime: t.mime }));
@@ -3658,6 +3669,17 @@ function adoptData(data) {
   S.map = data;
   S.mapId = data.map.id;
   syncSummary();
+  writeSaved(sessionStorage, 'maplab_c_map_' + data.map.id, data);
+}
+
+// Memoria della scheda del browser: le schermate si aprono subito con gli ultimi
+// dati ricevuti e si aggiornano in sottofondo. Si cancella uscendo o chiudendo la scheda.
+function persist() {
+  if (!S.me) return;
+  writeSaved(sessionStorage, 'maplab_c_boot', {
+    role: S.me.role, username: S.me.username, name: S.me.name, limits: S.me.limits,
+    classes: S.classes, maps: S.maps, usage: S.usage
+  });
 }
 
 function syncSummary() {
@@ -3772,6 +3794,7 @@ function enter(res) {
   $('userBox').hidden = false;
   $('userName').textContent = S.me.name;
   $('btnPwd').hidden = isAdmin();
+  persist();
   route();
 }
 
@@ -3781,6 +3804,7 @@ function sessionLost(msg) {
   lostShown = true;
   setTimeout(() => { lostShown = false; }, 1500);
   saveToken('');
+  clearSaved(sessionStorage, 'maplab_c_');
   S.me = null;
   showLogin(msg);
 }
@@ -3861,6 +3885,7 @@ async function logout() {
   }
   const t = S.token;
   saveToken('');
+  clearSaved(sessionStorage, 'maplab_c_');
   S.me = null;
   location.hash = '';
   showLogin();
@@ -3876,6 +3901,7 @@ async function loadMaps() {
   S.maps = r.maps;
   S.usage = r.usage;
   S.mapsAt = Date.now();
+  persist();
 }
 
 // Riga "Mappe 2 di 5 · Spazio …" per i colleghi (l'amministratore non ha limiti).
@@ -3894,6 +3920,7 @@ function usageHtml(kind) {
 window.addEventListener('hashchange', () => { if (S.token && S.me) route(); });
 
 function route() {
+  persist();
   const parts = (location.hash.replace(/^#/, '') || 'mappe').split('/');
   stopPlacing(true);
   if (parts[0] !== 'mappa') S.map = null;
@@ -4019,12 +4046,20 @@ function newMapDialog() {
 
 // ===================== DETTAGLIO MAPPA =====================
 async function openMap(mapId, tab) {
-  const cached = S.mapId === mapId && S.map;
+  let cached = S.mapId === mapId && S.map;
+  if (!cached) {
+    const saved = readSaved(sessionStorage, 'maplab_c_map_' + mapId);
+    if (saved) {
+      S.map = saved;
+      S.mapId = mapId;
+      S.pointFilter = { classId: '', n: '', cat: '', q: '' };
+      cached = true;
+    }
+  }
   if (!cached) {
     content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
     try {
-      S.map = await adm('adminGetMap', { mapId: mapId });
-      S.mapId = mapId;
+      adoptData(await adm('adminGetMap', { mapId: mapId }));
       S.pointFilter = { classId: '', n: '', cat: '', q: '' };
     } catch (e) {
       content.innerHTML = `<div class="page-inner"><p class="notice danger">${esc(e.message)}</p><a class="btn btn-ghost" href="#mappe">Torna alle mappe</a></div>`;
@@ -4605,6 +4640,7 @@ async function deleteMapFlow() {
 // ===================== CLASSI E CODICI =====================
 function renderClasses() {
   document.title = 'Classi e codici — MapLab';
+  persist();
   const usage = {};
   S.maps.forEach(m => m.classIds.forEach(id => { usage[id] = (usage[id] || 0) + 1; }));
   content.innerHTML = `<div class="page-inner">
@@ -4922,11 +4958,20 @@ function panelUrl() {
 
 async function renderTeachers() {
   document.title = 'Docenti — MapLab';
-  content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
-  try { S.teachers = (await adm('listTeachers')).teachers; }
-  catch (e) { if (!e.auth) content.innerHTML = `<div class="page-inner"><p class="notice danger">${esc(e.message)}</p></div>`; return; }
-  if (location.hash !== '#docenti') return;
-  drawTeachers();
+  const saved = readSaved(sessionStorage, 'maplab_c_teachers');
+  if (saved) { S.teachers = saved; drawTeachers(); }
+  else content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
+  let fresh;
+  try { fresh = (await adm('listTeachers')).teachers; }
+  catch (e) {
+    if (!e.auth && !saved) content.innerHTML = `<div class="page-inner"><p class="notice danger">${esc(e.message)}</p></div>`;
+    return;
+  }
+  const changed = JSON.stringify(fresh) !== JSON.stringify(S.teachers);
+  S.teachers = fresh;
+  writeSaved(sessionStorage, 'maplab_c_teachers', fresh);
+  if (location.hash !== '#docenti' || anyDialogOpen()) return;
+  if (changed || !saved) drawTeachers();
 }
 
 function statusOf(t) {
@@ -4937,6 +4982,7 @@ function statusOf(t) {
 
 function drawTeachers() {
   const list = S.teachers;
+  writeSaved(sessionStorage, 'maplab_c_teachers', list);
   const n = (used, max, unit) => `${String(used).replace('.', ',')}<span class="sub"> / ${max}${unit || ''}</span>`;
   content.innerHTML = `<div class="page-inner">
     <div class="view-head">
@@ -5113,11 +5159,26 @@ async function deleteTeacherFlow(t) {
   try { saved = sessionStorage.getItem('maplab_token') || ''; } catch (e) { /* niente */ }
   if (!saved) return showLogin();
   S.token = saved;
-  content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
+  // Ricaricando la pagina: mostro subito l'ultimo stato e intanto lo aggiorno.
+  const boot = readSaved(sessionStorage, 'maplab_c_boot');
+  if (boot) enter(boot);
+  else content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
   try {
-    enter(await api('bootstrap', { token: saved }));
+    const res = await api('bootstrap', { token: saved });
+    if (!boot || res.mustChange) return enter(res);
+    const before = JSON.stringify([S.classes, S.maps, S.usage, S.me && S.me.limits]);
+    S.me = { role: res.role, username: res.username, name: res.name, limits: res.limits };
+    S.classes = res.classes || [];
+    S.maps = res.maps || [];
+    S.usage = res.usage || null;
+    S.mapsAt = Date.now();
+    persist();
+    const changed = before !== JSON.stringify([S.classes, S.maps, S.usage, S.me.limits]);
+    const hash = location.hash || '#mappe';
+    if (changed && !anyDialogOpen() && !queue.pending && (hash === '#mappe' || hash === '#classi')) route();
   } catch (e) {
     saveToken('');
+    clearSaved(sessionStorage, 'maplab_c_');
     showLogin(e.auth ? '' : e.message);
   }
 })();

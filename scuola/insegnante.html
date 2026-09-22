@@ -265,23 +265,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.9rem;background:#fff}
 .radio-card b{display:block}
 .radio-card span{font-size:.85rem;color:var(--ink-2)}
 
-.user-box{display:flex;align-items:center;gap:8px}
-.user-name{font-size:.85rem;color:var(--bar-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
-.usage{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.85rem;color:var(--ink-2)}
-.usage b{color:var(--ink)}
-.usage .full{color:var(--danger);font-weight:600}
-.cred{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;padding:14px;border-radius:var(--r-sm);background:var(--accent-soft);margin:6px 0 12px}
-.cred .v{font-family:ui-monospace,Consolas,monospace;font-size:1.1rem;font-weight:700;letter-spacing:.03em}
-.num-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
-.tbl .sub{font-size:.78rem;color:var(--ink-3)}
 .login{display:grid;place-items:center;padding:24px}
 .login form{width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:26px}
 .login h1{font-family:var(--serif);font-weight:600;margin:0 0 6px;font-size:1.6rem}
 .login p{color:var(--ink-2);margin:0 0 18px}
-.login p.err{color:var(--danger);margin:0 0 10px}
 @media (max-width:700px){
   .nav a{padding:7px 8px}
-  .user-name{display:none}
   .topbar .brand span{display:none}
   .tbl .text-cell{display:none}
 }
@@ -294,15 +283,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.9rem;background:#fff}
   <nav class="nav" id="nav" hidden>
     <a href="#mappe" data-nav="mappe">Mappe</a>
     <a href="#classi" data-nav="classi">Classi e codici</a>
-    <a href="#docenti" data-nav="docenti" id="navDocenti" hidden>Docenti</a>
   </nav>
   <span class="spacer"></span>
   <span class="save-status" id="saveStatus" hidden></span>
-  <div class="user-box" id="userBox" hidden>
-    <span class="user-name" id="userName"></span>
-    <button class="btn btn-ghost btn-sm" id="btnPwd" type="button" hidden>Cambia password</button>
-    <button class="btn btn-ghost btn-sm" id="btnLogout" type="button">Esci</button>
-  </div>
+  <button class="btn btn-ghost btn-sm" id="btnLogout" type="button" hidden>Esci</button>
 </header>
 
 <main class="content" id="content"></main>
@@ -310,7 +294,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.9rem;background:#fff}
 <script>
 // ===================== CONFIGURAZIONE =====================
 // Indirizzo della Web App di Apps Script (lo stesso di studenti.html).
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbytEvSHE51QBGen-cjtywuXu1MdfJ3Hwq28ZHjZ5W-DQdo9vFCcQh9nWgg45v3sBLvB/exec';
+const WEBAPP_URL = 'INSERISCI_QUI_URL_WEBAPP';
 // Indirizzo pubblico di studenti.html (serve per i link e i QR code),
 // es. 'https://tuonome.github.io/maplab/studenti.html'.
 // Se lasci vuoto e questo pannello è online nella stessa cartella, viene ricavato da solo.
@@ -2719,31 +2703,11 @@ var qrcode = function() {
 /* ================= MapLab — funzioni comuni ================= */
 
 // ---------- Comunicazione con il server (Apps Script) ----------
-// Diagnostica: aggiungendo ?diag all'indirizzo compare un riquadro con i tempi
-// di ogni richiesta (totale e lavoro dello script; la differenza è rete e avvio).
-const DIAG = /[?&]diag\b/.test(location.search);
-const diagLog = [];
-function diagRecord(action, total, server) {
-  diagLog.unshift({ action: action, total: total, server: server, at: new Date().toLocaleTimeString('it-IT') });
-  diagLog.length = Math.min(diagLog.length, 12);
-  if (!DIAG) return;
-  let box = document.getElementById('diagBox');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'diagBox';
-    box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:2000;background:rgba(20,30,35,.92);color:#e8efee;font:12px/1.5 ui-monospace,Consolas,monospace;padding:8px 10px;border-radius:8px;max-width:360px;pointer-events:none';
-    document.body.appendChild(box);
-  }
-  box.innerHTML = '<b>Tempi (ms): totale / script</b><br>' + diagLog.map(d =>
-    `${d.at} ${esc(d.action)}: <b>${d.total}</b> / ${d.server == null ? '?' : d.server}`).join('<br>');
-}
-
 async function api(action, params) {
   if (!WEBAPP_URL || /INSERISCI/.test(WEBAPP_URL)) {
     throw new Error("Manca l'indirizzo del server: inserisci WEBAPP_URL in cima al file (vedi ISTRUZIONI).");
   }
   let res;
-  const t0 = performance.now();
   try {
     res = await fetch(WEBAPP_URL, {
       method: 'POST',
@@ -2758,12 +2722,7 @@ async function api(action, params) {
   } catch (e) {
     throw new Error('Il server ha risposto in modo inatteso. Controlla che la Web App sia pubblicata con accesso "Chiunque".');
   }
-  diagRecord(action, Math.round(performance.now() - t0), data.ms);
-  if (!data.ok) {
-    const err = new Error(data.error || 'Errore sconosciuto.');
-    err.auth = !!data.auth; // sessione scaduta o account non più valido
-    throw err;
-  }
+  if (!data.ok) throw new Error(data.error || 'Errore sconosciuto.');
   return data;
 }
 
@@ -2984,75 +2943,23 @@ function driveThumb(fileId, size) {
 // Prova l'anteprima pubblica di Drive; se non funziona (file appena caricato o
 // condivisione vietata dal dominio) chiede l'immagine al server.
 const imageCache = {};
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
-};
-// Se l'anteprima pubblica di Drive non funziona (dominio che blocca la condivisione),
-// dopo qualche tentativo non la provo più e chiedo subito l'immagine al server.
-function drivePublicUsable() {
-  const v = store.get('maplab_drive_public');
-  return v === 'yes' || !(Number(v) >= 3);
-}
-function driveFailed() {
-  const v = store.get('maplab_drive_public');
-  if (v !== 'yes') store.set('maplab_drive_public', String((Number(v) || 0) + 1));
-}
-
-// Al massimo 2 immagini alla volta chieste al server, per non intasarlo.
-let imgActive = 0;
-const imgWaiting = [];
-function limitImage(fn) {
-  return new Promise((resolve, reject) => {
-    const run = () => {
-      imgActive++;
-      fn().then(resolve, reject).finally(() => {
-        imgActive--;
-        const next = imgWaiting.shift();
-        if (next) next();
-      });
-    };
-    if (imgActive < 2) run(); else imgWaiting.push(run);
-  });
-}
-
 function loadDriveImage(img, mapId, fileId, size) {
   if (!fileId) return;
-  const cached = imageCache[fileId] || store.get('maplab_img_' + fileId);
-  if (cached) { imageCache[fileId] = cached; img.src = cached; return; }
-  const viaServer = () => limitImage(() => api('getImage', { mapId: mapId, fileId: fileId })).then(data => {
-    imageCache[fileId] = data.dataUrl;
-    // Le immagini piccole (miniature, foto delle puntine) restano nel browser anche dopo.
-    if (data.dataUrl.length < 250000) store.set('maplab_img_' + fileId, data.dataUrl);
-    img.src = data.dataUrl;
-  }).catch(() => {
-    img.alt = 'Immagine non disponibile';
-    img.dispatchEvent(new Event('maplab-failed'));
-  });
-  if (!drivePublicUsable()) { viaServer(); return; }
-  const url = driveThumb(fileId, size);
-  const onLoad = () => { if (img.src === url) store.set('maplab_drive_public', 'yes'); cleanup(); };
-  const onError = () => { cleanup(); driveFailed(); viaServer(); };
-  const cleanup = () => { img.removeEventListener('load', onLoad); img.removeEventListener('error', onError); };
-  img.addEventListener('load', onLoad);
-  img.addEventListener('error', onError);
-  img.src = url;
-}
-
-// Memoria dei dati già ricevuti: le schermate compaiono subito e si aggiornano dopo.
-function readSaved(storage, key) {
-  try { const v = storage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
-}
-function writeSaved(storage, key, value) {
-  try { storage.setItem(key, JSON.stringify(value)); } catch (e) { /* spazio finito o memoria non disponibile */ }
-}
-function clearSaved(storage, prefix) {
-  try { Object.keys(storage).forEach(k => { if (k.indexOf(prefix) === 0) storage.removeItem(k); }); } catch (e) { /* niente */ }
-}
-
-// Miniatura per gli elenchi (circa 480 px): si carica in un attimo.
-function prepareThumb(file) {
-  return prepareImage(file, 480, 0.75).then(t => ({ base64: t.base64, mime: t.mime }));
+  if (imageCache[fileId]) { img.src = imageCache[fileId]; return; }
+  let triedFallback = false;
+  img.onerror = async () => {
+    if (triedFallback) return;
+    triedFallback = true;
+    try {
+      const data = await api('getImage', { mapId: mapId, fileId: fileId });
+      imageCache[fileId] = data.dataUrl;
+      img.src = data.dataUrl;
+    } catch (e) {
+      img.alt = 'Immagine non disponibile';
+      img.dispatchEvent(new Event('maplab-failed'));
+    }
+  };
+  img.src = driveThumb(fileId, size);
 }
 
 // ---------- Avvisi e dialoghi ----------
@@ -3403,37 +3310,18 @@ class MapViewer {
   }
 
   // Carica l'immagine della carta. w/h servono a impaginare prima del caricamento.
-  // Mostra subito la miniatura (se c'è) e la sostituisce con la carta nitida appena arriva.
-  setImage(mapId, fileId, w, h, thumbId) {
+  setImage(mapId, fileId, w, h) {
     this.showMessage('');
     if (w && h) this._setSize(w, h);
-    const token = (this._imgToken = {});
     return new Promise(resolve => {
-      let done = false;
-      const finish = ok => { if (!done) { done = true; resolve(ok); } };
-      const full = new Image();
-      full.addEventListener('load', () => {
-        if (this._imgToken !== token) return;
-        if (!w || !h || Math.abs(full.naturalWidth / full.naturalHeight - w / h) > 0.02) {
-          this._setSize(full.naturalWidth, full.naturalHeight);
+      this.img.onload = () => {
+        if (!w || !h || Math.abs(this.img.naturalWidth / this.img.naturalHeight - w / h) > 0.02) {
+          this._setSize(this.img.naturalWidth, this.img.naturalHeight);
         }
-        this.img.src = full.src;
-        finish(true);
-      });
-      full.addEventListener('maplab-failed', () => {
-        if (this._imgToken !== token) return;
-        if (!thumbId) this.showMessage('Non riesco a caricare la carta. Riprova più tardi.');
-        finish(false);
-      }, { once: true });
-      if (thumbId && w && h) {
-        const small = new Image();
-        small.addEventListener('load', () => {
-          if (this._imgToken === token && !full.complete) this.img.src = small.src;
-          finish(true);
-        }, { once: true });
-        loadDriveImage(small, mapId, thumbId, 480);
-      }
-      loadDriveImage(full, mapId, fileId, 3000);
+        resolve(true);
+      };
+      this.img.addEventListener('maplab-failed', () => { this.showMessage('Non riesco a caricare la carta. Riprova più tardi.'); resolve(false); }, { once: true });
+      loadDriveImage(this.img, mapId, fileId, 3000);
     });
   }
 
@@ -3618,10 +3506,7 @@ class MapViewer {
 const $ = id => document.getElementById(id);
 const content = $('content');
 const S = {
-  token: '',
-  me: null,           // {role, username, name, limits}
-  usage: null,        // {maps, points, classes, mb}
-  teachers: [],
+  key: '',
   maps: [],
   classes: [],
   showArchived: false,
@@ -3632,16 +3517,9 @@ const S = {
   pointFilter: { classId: '', n: '', cat: '', q: '' }
 };
 
-async function adm(action, params) {
-  try {
-    return await api(action, Object.assign({ token: S.token }, params || {}));
-  } catch (e) {
-    if (e.auth) sessionLost(e.message);
-    throw e;
-  }
+function adm(action, params) {
+  return api(action, Object.assign({ adminKey: S.key }, params || {}));
 }
-
-function isAdmin() { return !!S.me && S.me.role === 'admin'; }
 
 // Le modifiche compaiono subito e vengono salvate in sottofondo, una alla volta.
 const queue = new SyncQueue({
@@ -3669,17 +3547,6 @@ function adoptData(data) {
   S.map = data;
   S.mapId = data.map.id;
   syncSummary();
-  writeSaved(sessionStorage, 'maplab_c_map_' + data.map.id, data);
-}
-
-// Memoria della scheda del browser: le schermate si aprono subito con gli ultimi
-// dati ricevuti e si aggiornano in sottofondo. Si cancella uscendo o chiudendo la scheda.
-function persist() {
-  if (!S.me) return;
-  writeSaved(sessionStorage, 'maplab_c_boot', {
-    role: S.me.role, username: S.me.username, name: S.me.name, limits: S.me.limits,
-    classes: S.classes, maps: S.maps, usage: S.usage
-  });
 }
 
 function syncSummary() {
@@ -3736,197 +3603,63 @@ async function withBusy(btn, fn) {
 }
 
 // ===================== ACCESSO =====================
-function saveToken(t) {
-  S.token = t || '';
-  try { t ? sessionStorage.setItem('maplab_token', t) : sessionStorage.removeItem('maplab_token'); } catch (e) { /* niente */ }
-}
-
-function hideChrome() {
-  $('nav').hidden = true;
-  $('userBox').hidden = true;
-}
-
 function showLogin(msg) {
-  hideChrome();
+  $('nav').hidden = true;
+  $('btnLogout').hidden = true;
   content.innerHTML = `
     <div class="login"><form id="loginForm" novalidate>
       <h1>Pannello insegnante</h1>
-      <p>Entra con il nome utente e la password che ti ha dato l'amministratore di MapLab.</p>
-      <label class="field"><span class="label">Nome utente</span>
-        <input class="input" name="username" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
-      <label class="field"><span class="label">Password</span>
-        <input class="input" type="password" name="password" autocomplete="current-password"></label>
+      <p>Inserisci la chiave che hai scritto in ADMIN_KEY dentro Codice.gs.</p>
+      <label class="field"><span class="label">Chiave insegnante</span>
+        <input class="input" type="password" name="key" autocomplete="current-password"></label>
       <p class="err" id="loginErr">${esc(msg || '')}</p>
       <button class="btn" type="submit" style="width:100%">Entra</button>
     </form></div>`;
   const form = $('loginForm');
-  form.elements.username.focus();
+  form.elements.key.focus();
   form.onsubmit = async e => {
     e.preventDefault();
-    const username = form.elements.username.value.trim();
-    const password = form.elements.password.value;
-    if (!username || !password) { $('loginErr').textContent = 'Scrivi nome utente e password.'; return; }
-    const btn = form.querySelector('button');
-    btn.disabled = true;
+    S.key = form.elements.key.value.trim();
     $('loginErr').textContent = 'Accesso in corso…';
-    try {
-      const res = await api('login', { username: username, password: password });
-      saveToken(res.token);
-      enter(res);
-    } catch (ex) {
-      $('loginErr').textContent = ex.message;
-      btn.disabled = false;
-    }
+    await doLogin();
   };
 }
 
-// Entra nel pannello con i dati ricevuti (login, bootstrap o cambio password).
-function enter(res) {
-  S.me = { role: res.role, username: res.username, name: res.name, limits: res.limits };
-  if (res.mustChange) return showForcedPassword();
-  if (res.migrated) toast(`Ho importato la vecchia mappa come "${res.migrated}".`, 'ok');
-  S.classes = res.classes || [];
-  S.maps = res.maps || [];
-  S.usage = res.usage || null;
-  S.mapsAt = Date.now();
-  $('nav').hidden = false;
-  $('navDocenti').hidden = !isAdmin();
-  $('userBox').hidden = false;
-  $('userName').textContent = S.me.name;
-  $('btnPwd').hidden = isAdmin();
-  persist();
-  route();
-}
-
-let lostShown = false;
-function sessionLost(msg) {
-  if (lostShown) return;
-  lostShown = true;
-  setTimeout(() => { lostShown = false; }, 1500);
-  saveToken('');
-  clearSaved(sessionStorage, 'maplab_c_');
-  S.me = null;
-  showLogin(msg);
-}
-
-// Primo accesso (o password reimpostata): si sceglie la propria password.
-function showForcedPassword() {
-  hideChrome();
-  content.innerHTML = `
-    <div class="login"><form id="pwdForm" novalidate>
-      <h1>Scegli la tua password</h1>
-      <p>Ciao ${esc(S.me.name)}! La password che hai ricevuto è temporanea: scegline una tua, di almeno 8 caratteri.</p>
-      <label class="field"><span class="label">Nuova password</span>
-        <input class="input" type="password" name="p1" autocomplete="new-password"></label>
-      <label class="field"><span class="label">Ripeti la nuova password</span>
-        <input class="input" type="password" name="p2" autocomplete="new-password"></label>
-      <p class="err" id="pwdErr"></p>
-      <button class="btn" type="submit" style="width:100%">Salva e continua</button>
-      <button class="btn btn-ghost" type="button" id="pwdCancel" style="width:100%;margin-top:8px">Esci</button>
-    </form></div>`;
-  const form = $('pwdForm');
-  form.elements.p1.focus();
-  $('pwdCancel').onclick = logout;
-  form.onsubmit = async e => {
-    e.preventDefault();
-    const err = checkNewPassword(form.elements.p1.value, form.elements.p2.value);
-    if (err) { $('pwdErr').textContent = err; return; }
-    $('pwdErr').textContent = 'Salvataggio…';
-    try {
-      const res = await adm('changePassword', { newPassword: form.elements.p1.value });
-      saveToken(res.token);
-      toast('Password salvata. Benvenuto in MapLab!', 'ok');
-      enter(res);
-    } catch (ex) { if (!ex.auth) $('pwdErr').textContent = ex.message; }
-  };
-}
-
-function checkNewPassword(p1, p2) {
-  if (p1.length < 8) return 'La password deve avere almeno 8 caratteri.';
-  if (p1 !== p2) return 'Le due password non coincidono.';
-  return '';
-}
-
-// Cambio password volontario (dal pulsante in alto).
-function changePasswordDialog() {
-  const d = makeDialog(`<form novalidate>
-    <div class="dlg-head"><h2>Cambia password</h2></div>
-    <div class="dlg-body">
-      <label class="field"><span class="label">Password attuale</span><input class="input" type="password" name="old" autocomplete="current-password"></label>
-      <label class="field"><span class="label">Nuova password (almeno 8 caratteri)</span><input class="input" type="password" name="p1" autocomplete="new-password"></label>
-      <label class="field"><span class="label">Ripeti la nuova password</span><input class="input" type="password" name="p2" autocomplete="new-password"></label>
-      <p class="err" data-err></p>
-    </div>
-    <div class="dlg-foot"><button class="btn btn-ghost" type="button" data-cancel>Annulla</button><button class="btn" type="submit">Salva</button></div>
-  </form>`);
-  const form = d.querySelector('form');
-  const errEl = d.querySelector('[data-err]');
-  d.querySelector('[data-cancel]').onclick = () => d.close();
-  form.onsubmit = async e => {
-    e.preventDefault();
-    const err = checkNewPassword(form.elements.p1.value, form.elements.p2.value);
-    if (err) { errEl.textContent = err; return; }
-    errEl.textContent = 'Salvataggio…';
-    try {
-      const res = await adm('changePassword', { oldPassword: form.elements.old.value, newPassword: form.elements.p1.value });
-      saveToken(res.token);
-      d.close();
-      toast('Password cambiata.', 'ok');
-    } catch (ex) { if (!ex.auth) errEl.textContent = ex.message; }
-  };
-  d.showModal();
-  form.elements.old.focus();
-}
-
-async function logout() {
-  if (queue.pending) {
-    const yes = await confirmBox('Alcune modifiche si stanno ancora salvando. Uscire comunque?', { title: 'Esci', ok: 'Esci' });
-    if (!yes) return;
+async function doLogin() {
+  try {
+    const res = await adm('adminLogin');
+    try { sessionStorage.setItem('maplab_admin', S.key); } catch (e) { /* niente */ }
+    if (res.migrated) toast(`Ho importato la vecchia mappa come "${res.migrated}".`, 'ok');
+    S.classes = res.classes;
+    S.maps = res.maps;
+    $('nav').hidden = false;
+    $('btnLogout').hidden = false;
+    route();
+  } catch (e) {
+    try { sessionStorage.removeItem('maplab_admin'); } catch (x) { /* niente */ }
+    showLogin(e.message);
   }
-  const t = S.token;
-  saveToken('');
-  clearSaved(sessionStorage, 'maplab_c_');
-  S.me = null;
+}
+
+$('btnLogout').onclick = () => {
+  try { sessionStorage.removeItem('maplab_admin'); } catch (e) { /* niente */ }
+  S.key = '';
   location.hash = '';
   showLogin();
-  if (t) api('logout', { token: t }).catch(() => {});
-}
-
-$('btnLogout').onclick = logout;
-$('btnPwd').onclick = changePasswordDialog;
+};
 
 async function loadClasses() { S.classes = (await adm('listClasses')).classes; }
-async function loadMaps() {
-  const r = await adm('listMaps');
-  S.maps = r.maps;
-  S.usage = r.usage;
-  S.mapsAt = Date.now();
-  persist();
-}
-
-// Riga "Mappe 2 di 5 · Spazio …" per i colleghi (l'amministratore non ha limiti).
-function usageHtml(kind) {
-  if (isAdmin() || !S.me || !S.me.limits || !S.usage) return '';
-  const L = S.me.limits, U = S.usage;
-  const item = (label, used, max, unit) => {
-    const full = used >= max;
-    return `<span${full ? ' class="full"' : ''}>${label}: <b>${String(used).replace('.', ',')}</b> di ${max}${unit || ''}${full ? ' (limite raggiunto)' : ''}</span>`;
-  };
-  if (kind === 'classes') return `<div class="usage">${item('Classi', S.classes.length, L.classes)}</div>`;
-  return `<div class="usage">${item('Mappe', U.maps, L.maps)}${item('Spazio', U.mb, L.mb, ' MB')}<span>Puntine per mappa: al massimo <b>${L.pointsPerMap}</b></span></div>`;
-}
+async function loadMaps() { S.maps = (await adm('listMaps')).maps; }
 
 // ===================== NAVIGAZIONE =====================
-window.addEventListener('hashchange', () => { if (S.token && S.me) route(); });
+window.addEventListener('hashchange', () => { if (S.key) route(); });
 
 function route() {
-  persist();
   const parts = (location.hash.replace(/^#/, '') || 'mappe').split('/');
   stopPlacing(true);
   if (parts[0] !== 'mappa') S.map = null;
   document.querySelectorAll('[data-nav]').forEach(a => a.setAttribute('aria-current', a.dataset.nav === (parts[0] === 'mappa' ? 'mappe' : parts[0]) ? 'page' : 'false'));
   if (parts[0] === 'classi') return renderClasses();
-  if (parts[0] === 'docenti' && isAdmin()) return renderTeachers();
   if (parts[0] === 'mappa' && parts[1]) return openMap(parts[1], parts[2] || 'carta');
   renderMaps();
 }
@@ -3938,7 +3671,7 @@ function renderMaps() {
   const archivedCount = S.maps.filter(m => m.archived).length;
   content.innerHTML = `<div class="page-inner">
     <div class="view-head">
-      <div><h1>Le tue mappe</h1><p>Ogni mappa ha un suo link per gli studenti e resta disponibile finché non la elimini.</p>${usageHtml('maps')}</div>
+      <div><h1>Le tue mappe</h1><p>Ogni mappa ha un suo link per gli studenti e resta disponibile finché non la elimini.</p></div>
       <div class="btn-row">
         ${archivedCount ? `<label class="check"><input type="checkbox" id="chkArchived" ${S.showArchived ? 'checked' : ''}> Mostra archiviate (${archivedCount})</label>` : ''}
         <button class="btn" id="btnNewMap" type="button">${ui('plus')}Nuova mappa</button>
@@ -3950,22 +3683,14 @@ function renderMaps() {
   content.querySelectorAll('img[data-file]').forEach(img => loadDriveImage(img, img.dataset.map, img.dataset.file, 600));
   const chk = $('chkArchived');
   if (chk) chk.onchange = () => { S.showArchived = chk.checked; renderMaps(); };
-  $('btnNewMap') && ($('btnNewMap').onclick = newMapIfAllowed);
-  $('btnNewMap2') && ($('btnNewMap2').onclick = newMapIfAllowed);
+  $('btnNewMap') && ($('btnNewMap').onclick = newMapDialog);
+  $('btnNewMap2') && ($('btnNewMap2').onclick = newMapDialog);
   refreshMapList();
-}
-
-function newMapIfAllowed() {
-  if (!isAdmin() && S.me.limits && S.usage && S.usage.maps >= S.me.limits.maps) {
-    toast(`Hai raggiunto il limite di ${S.me.limits.maps} mappe. Eliminane una o chiedi all'amministratore di aumentare il limite.`, 'err');
-    return;
-  }
-  newMapDialog();
 }
 
 // L'elenco compare subito con i dati che ho; poi controllo se ci sono novità.
 async function refreshMapList() {
-  if (queue.pending || Date.now() - (S.mapsAt || 0) < 60000) return; // dati appena arrivati: inutile richiederli
+  if (queue.pending) return;
   const before = JSON.stringify(S.maps);
   try { await loadMaps(); } catch (e) { return; }
   if (JSON.stringify(S.maps) !== before && (location.hash || '#mappe') === '#mappe' && !anyDialogOpen()) renderMaps();
@@ -3981,7 +3706,7 @@ function statusChip(m) {
 function mapCardHtml(m) {
   const classes = m.classIds.map(className).filter(Boolean);
   return `<a class="map-card${m.archived ? ' archived' : ''}" href="#mappa/${encodeURIComponent(m.id)}">
-    ${m.imageFileId ? `<img class="thumb" alt="" data-map="${esc(m.id)}" data-file="${esc(m.thumbFileId || m.imageFileId)}">` : '<span class="thumb"></span>'}
+    ${m.imageFileId ? `<img class="thumb" alt="" data-map="${esc(m.id)}" data-file="${esc(m.imageFileId)}">` : '<span class="thumb"></span>'}
     <span class="body">
       <h3>${esc(m.title)}</h3>
       <span class="btn-row">${statusChip(m)}<span class="chip">${m.pointCount} puntine</span></span>
@@ -4022,16 +3747,14 @@ function newMapDialog() {
     try {
       err.textContent = 'Preparo l\'immagine…';
       const img = await prepareImage(file, 4000, 0.86);
-      const thumb = await prepareThumb(file);
       err.textContent = 'Carico su Drive… (può volerci qualche secondo)';
       const classIds = [...form.querySelectorAll('input[name=cls]:checked')].map(i => i.value);
       const res = await adm('createMap', {
         title: title, description: form.elements.description.value, classIds: classIds,
-        image: { base64: img.base64, mime: img.mime, w: img.w, h: img.h }, thumb: thumb
+        image: { base64: img.base64, mime: img.mime, w: img.w, h: img.h }
       });
       d.close();
       adoptData(res.data);
-      if (res.usage) S.usage = res.usage;
       S.pointFilter = { classId: '', n: '', cat: '', q: '' };
       toast('Mappa creata.', 'ok');
       location.hash = '#mappa/' + res.mapId;
@@ -4046,20 +3769,12 @@ function newMapDialog() {
 
 // ===================== DETTAGLIO MAPPA =====================
 async function openMap(mapId, tab) {
-  let cached = S.mapId === mapId && S.map;
-  if (!cached) {
-    const saved = readSaved(sessionStorage, 'maplab_c_map_' + mapId);
-    if (saved) {
-      S.map = saved;
-      S.mapId = mapId;
-      S.pointFilter = { classId: '', n: '', cat: '', q: '' };
-      cached = true;
-    }
-  }
+  const cached = S.mapId === mapId && S.map;
   if (!cached) {
     content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
     try {
-      adoptData(await adm('adminGetMap', { mapId: mapId }));
+      S.map = await adm('adminGetMap', { mapId: mapId });
+      S.mapId = mapId;
       S.pointFilter = { classId: '', n: '', cat: '', q: '' };
     } catch (e) {
       content.innerHTML = `<div class="page-inner"><p class="notice danger">${esc(e.message)}</p><a class="btn btn-ghost" href="#mappe">Torna alle mappe</a></div>`;
@@ -4093,13 +3808,13 @@ async function syncMap() {
     renderCategoriesTab();
   }
 }
-setInterval(() => { if (S.token && /^#mappa\//.test(location.hash)) syncMap(); }, 20000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S.token && /^#mappa\//.test(location.hash)) syncMap(); });
+setInterval(() => { if (S.key && /^#mappa\//.test(location.hash)) syncMap(); }, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.key && /^#mappa\//.test(location.hash)) syncMap(); });
 
 
 function renderDetail(tab) {
   // Se nel frattempo sei passato a un'altra pagina, non ridisegno il dettaglio.
-  if (!S.me || !S.map || location.hash.indexOf('#mappa/' + S.mapId) !== 0) return;
+  if (!S.map || location.hash.indexOf('#mappa/' + S.mapId) !== 0) return;
   const m = S.map.map;
   document.title = m.title + ' — MapLab';
   const tabs = [['carta', 'Carta'], ['puntine', `Puntine (${S.map.points.length})`], ['categorie', 'Categorie'], ['impostazioni', 'Impostazioni']];
@@ -4155,7 +3870,7 @@ function renderMapTab() {
     onPinTap: id => openTeacherPoint(id),
     onMapTap: (x, y) => onTeacherMapTap(x, y)
   });
-  if (m.imageFileId) S.viewer.setImage(S.mapId, m.imageFileId, m.imageW, m.imageH, m.thumbFileId);
+  if (m.imageFileId) S.viewer.setImage(S.mapId, m.imageFileId, m.imageW, m.imageH);
   else S.viewer.showMessage('Questa mappa non ha ancora una carta: caricala da Impostazioni.');
   S.viewer.setPins(S.map.points, m.categories);
   $('btnTAdd').onclick = () => startPlacing({ mode: 'add' });
@@ -4321,7 +4036,6 @@ function renderPointsTab() {
     </div>
     <div class="toolbar">
       <button class="btn btn-ghost btn-sm" id="btnCsv" type="button">${ui('download', 16)}Esporta per Excel (CSV)</button>
-      ${isAdmin() ? '' : `<span class="muted" style="font-size:.85rem">${pts.length} di ${S.map.map.maxPoints} puntine</span>`}
       <span class="spacer" style="flex:1"></span>
       ${pts.length ? `<button class="btn btn-danger-ghost btn-sm" id="btnClear" type="button">${ui('trash', 16)}Elimina tutte le puntine</button>` : ''}
     </div>
@@ -4530,7 +4244,7 @@ function renderSettingsTab() {
       <button class="btn btn-ghost" id="btnImg" type="button">${ui('upload', 16)}Sostituisci la carta</button>
     </div>
   </div></div>`;
-  if (m.imageFileId) loadDriveImage($('setThumb'), S.mapId, m.thumbFileId || m.imageFileId, 600);
+  if (m.imageFileId) loadDriveImage($('setThumb'), S.mapId, m.imageFileId, 600);
   const form = $('setForm');
   const paint = () => form.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', String(s.dataset.color === color)));
   form.onclick = e => { const s = e.target.closest('.swatch'); if (s) { color = s.dataset.color; paint(); } };
@@ -4551,11 +4265,10 @@ function renderSettingsTab() {
     await withBusy($('btnImg'), async () => {
       $('imgErr').textContent = 'Preparo e carico l\'immagine…';
       const img = await prepareImage(file, 4000, 0.86);
-      const thumb = await prepareThumb(file);
       const mapId = S.mapId;
       const res = await new Promise((resolve, reject) => queue.push({
         label: 'Carta',
-        run: () => adm('setMapImage', { mapId: mapId, image: { base64: img.base64, mime: img.mime, w: img.w, h: img.h }, thumb: thumb }),
+        run: () => adm('setMapImage', { mapId: mapId, image: { base64: img.base64, mime: img.mime, w: img.w, h: img.h } }),
         onSuccess: resolve, onError: reject
       }));
       adoptData(res.data);
@@ -4610,7 +4323,6 @@ function duplicateDialog() {
       const res = await adm('duplicateMap', { mapId: S.mapId, title: form.elements.title.value });
       d.close();
       adoptData(res.data);
-      if (res.usage) S.usage = res.usage;
       S.pointFilter = { classId: '', n: '', cat: '', q: '' };
       toast('Copia creata. Ricordati di abilitare le classi nelle Impostazioni.', 'ok');
       location.hash = '#mappa/' + res.mapId + '/impostazioni';
@@ -4628,8 +4340,7 @@ async function deleteMapFlow() {
   if (!yes) return;
   try {
     const id = S.mapId;
-    const res = await adm('deleteMap', { mapId: id });
-    if (res.usage) S.usage = res.usage;
+    await adm('deleteMap', { mapId: id });
     S.maps = S.maps.filter(x => x.id !== id);
     S.map = null; S.mapId = '';
     toast('Mappa eliminata.', 'ok');
@@ -4640,13 +4351,12 @@ async function deleteMapFlow() {
 // ===================== CLASSI E CODICI =====================
 function renderClasses() {
   document.title = 'Classi e codici — MapLab';
-  persist();
   const usage = {};
   S.maps.forEach(m => m.classIds.forEach(id => { usage[id] = (usage[id] || 0) + 1; }));
   content.innerHTML = `<div class="page-inner">
     <div class="view-head">
       <div><h1>Classi e codici</h1>
-        <p>Ogni classe ha un codice di classe (per aggiungere puntine insieme) e un codice numerato per ogni studente (per aggiungere, modificare e cancellare le proprie). I codici valgono su tutte le mappe dove abiliti la classe: puoi consegnarli una volta sola per tutto l'anno.</p>${usageHtml('classes')}</div>
+        <p>Ogni classe ha un codice di classe (per aggiungere puntine insieme) e un codice numerato per ogni studente (per aggiungere, modificare e cancellare le proprie). I codici valgono su tutte le mappe dove abiliti la classe: puoi consegnarli una volta sola per tutto l'anno.</p></div>
       <div class="btn-row">
         <button class="btn btn-ghost" id="btnImport" type="button">${ui('upload', 16)}Importa</button>
         ${S.classes.length ? `<button class="btn btn-ghost" id="btnExport" type="button">${ui('download', 16)}Esporta</button>` : ''}
@@ -4948,238 +4658,16 @@ function printHtml(c, fmt, codes, withClassCode) {
   </body></html>`;
 }
 
-
-// ===================== DOCENTI (solo amministratore) =====================
-function panelUrl() {
-  if (/^https?:/.test(location.protocol)) return location.href.split('#')[0].split('?')[0];
-  const base = studentBase();
-  return base ? base.replace(/studenti\.html.*$/, 'insegnante.html') : '';
-}
-
-async function renderTeachers() {
-  document.title = 'Docenti — MapLab';
-  const saved = readSaved(sessionStorage, 'maplab_c_teachers');
-  if (saved) { S.teachers = saved; drawTeachers(); }
-  else content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
-  let fresh;
-  try { fresh = (await adm('listTeachers')).teachers; }
-  catch (e) {
-    if (!e.auth && !saved) content.innerHTML = `<div class="page-inner"><p class="notice danger">${esc(e.message)}</p></div>`;
-    return;
-  }
-  const changed = JSON.stringify(fresh) !== JSON.stringify(S.teachers);
-  S.teachers = fresh;
-  writeSaved(sessionStorage, 'maplab_c_teachers', fresh);
-  if (location.hash !== '#docenti' || anyDialogOpen()) return;
-  if (changed || !saved) drawTeachers();
-}
-
-function statusOf(t) {
-  if (t.suspended) return '<span class="chip closed">Sospeso</span>';
-  if (t.mustChange) return '<span class="chip muted">Primo accesso da fare</span>';
-  return '<span class="chip ok">Attivo</span>';
-}
-
-function drawTeachers() {
-  const list = S.teachers;
-  writeSaved(sessionStorage, 'maplab_c_teachers', list);
-  const n = (used, max, unit) => `${String(used).replace('.', ',')}<span class="sub"> / ${max}${unit || ''}</span>`;
-  content.innerHTML = `<div class="page-inner">
-    <div class="view-head">
-      <div><h1>Docenti</h1>
-        <p>Crea un account per ogni collega: avrà il suo pannello con le sue classi e le sue mappe, separate dalle tue. Di ognuno vedi solo i numeri, non i contenuti.</p></div>
-      <div class="btn-row"><button class="btn" id="btnNewTeacher" type="button">${ui('plus')}Nuovo docente</button></div>
-    </div>
-    ${list.length ? `<div class="tbl-wrap"><table class="tbl">
-      <thead><tr><th>Docente</th><th>Stato</th><th>Mappe</th><th>Puntine</th><th>Classi</th><th>Spazio</th><th>Ultimo accesso</th><th></th></tr></thead>
-      <tbody>${list.map(t => `<tr data-id="${esc(t.id)}">
-        <td><div class="title-cell">${esc(t.name)}</div><div class="sub">${esc(t.username)}</div></td>
-        <td>${statusOf(t)}</td>
-        <td>${n(t.usage.maps, t.limits.maps)}</td>
-        <td>${t.usage.points}<span class="sub"> (max ${t.limits.pointsPerMap} per mappa)</span></td>
-        <td>${n(t.usage.classes, t.limits.classes)}</td>
-        <td style="white-space:nowrap">${n(t.usage.mb, t.limits.mb, ' MB')}</td>
-        <td style="white-space:nowrap">${t.lastLogin ? fmtDate(t.lastLogin, true) : '<span class="sub">mai</span>'}</td>
-        <td class="actions">
-          <button class="btn btn-ghost btn-sm" data-act="limits" type="button">Limiti</button>
-          <button class="btn btn-ghost btn-sm" data-act="reset" type="button">Nuova password</button>
-          <button class="btn btn-ghost btn-sm" data-act="suspend" type="button">${t.suspended ? 'Riattiva' : 'Sospendi'}</button>
-          <button class="btn btn-danger-ghost btn-sm btn-icon" data-act="delete" type="button" aria-label="Elimina ${esc(t.name)}">${ui('trash', 16)}</button>
-        </td></tr>`).join('')}</tbody></table></div>`
-      : '<div class="empty-state">Nessun collega ancora. Con "Nuovo docente" crei il primo account.</div>'}
-  </div>`;
-  $('btnNewTeacher').onclick = newTeacherDialog;
-  content.querySelector('.tbl') && (content.querySelector('.tbl').onclick = e => {
-    const b = e.target.closest('[data-act]');
-    if (!b) return;
-    const t = S.teachers.find(x => x.id === b.closest('tr').dataset.id);
-    const act = b.dataset.act;
-    if (act === 'limits') limitsDialog(t);
-    if (act === 'reset') resetTeacherFlow(t, b);
-    if (act === 'suspend') suspendTeacherFlow(t, b);
-    if (act === 'delete') deleteTeacherFlow(t);
-  });
-}
-
-function suggestUsername(name) {
-  return name.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '').replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, '').slice(0, 30);
-}
-
-function newTeacherDialog() {
-  const d = makeDialog(`<form novalidate>
-    <div class="dlg-head"><h2>Nuovo docente</h2></div>
-    <div class="dlg-body">
-      <label class="field"><span class="label">Nome e cognome</span><input class="input" name="name" maxlength="60" placeholder="es. Maria Rossi"></label>
-      <label class="field"><span class="label">Nome utente</span><input class="input" name="username" maxlength="30" autocapitalize="none" spellcheck="false">
-        <span class="hint">Lo userà per entrare. Viene proposto dal nome, puoi cambiarlo.</span></label>
-      <p class="notice" style="margin:0 0 8px">Limiti di partenza: 5 mappe, 150 puntine per mappa, 6 classi, 200 MB. Potrai cambiarli dopo.</p>
-      <p class="err" data-err></p>
-    </div>
-    <div class="dlg-foot"><button class="btn btn-ghost" type="button" data-cancel>Annulla</button><button class="btn" type="submit">Crea account</button></div>
-  </form>`);
-  const form = d.querySelector('form');
-  let touched = false;
-  form.elements.name.oninput = () => { if (!touched) form.elements.username.value = suggestUsername(form.elements.name.value); };
-  form.elements.username.oninput = () => { touched = true; };
-  d.querySelector('[data-cancel]').onclick = () => d.close();
-  form.onsubmit = async e => {
-    e.preventDefault();
-    const btn = form.querySelector('button[type=submit]');
-    btn.disabled = true;
-    try {
-      const res = await adm('createTeacher', { name: form.elements.name.value, username: form.elements.username.value });
-      d.close();
-      S.teachers.push(res.teacher);
-      drawTeachers();
-      credentialsDialog(res.teacher, res.password, true);
-    } catch (ex) {
-      if (!ex.auth) d.querySelector('[data-err]').textContent = ex.message;
-      btn.disabled = false;
-    }
-  };
-  d.showModal();
-  form.elements.name.focus();
-}
-
-// Mostra una sola volta nome utente e password temporanea, con un messaggio pronto da inviare.
-function credentialsDialog(t, password, isNew) {
-  const url = panelUrl();
-  const msg = `Ciao ${t.name.split(' ')[0]}, ${isNew ? 'ti ho creato un account' : 'ti ho impostato una nuova password'} su MapLab, lo strumento per le mappe storiche collaborative.\n\n`
-    + (url ? `Indirizzo: ${url}\n` : '')
-    + `Nome utente: ${t.username}\nPassword temporanea: ${password}\n\nAl primo accesso ti chiederà di scegliere una password tua.`;
-  const d = makeDialog(`
-    <div class="dlg-head"><h2>${isNew ? 'Account creato' : 'Nuova password'}</h2></div>
-    <div class="dlg-body">
-      <p style="margin-top:0">Comunica questi dati a ${esc(t.name)}. <b>La password non sarà più visibile</b>: se la perdi, potrai generarne un'altra.</p>
-      <div class="cred"><span>Nome utente</span><span class="v">${esc(t.username)}</span><span>Password</span><span class="v">${esc(password)}</span></div>
-      <p class="muted" style="font-size:.85rem;margin:0">Al primo accesso il collega dovrà scegliere una password sua.</p>
-    </div>
-    <div class="dlg-foot"><button class="btn btn-ghost left" type="button" data-copy>${ui('copy', 16)}Copia messaggio per il collega</button><button class="btn" type="button" data-close>Fatto</button></div>`);
-  d.querySelector('[data-close]').onclick = () => d.close();
-  d.querySelector('[data-copy]').onclick = async () => {
-    try { await navigator.clipboard.writeText(msg); toast('Messaggio copiato: incollalo in una mail o in chat.', 'ok'); }
-    catch (e) { toast('Copia non riuscita: annota i dati a mano.', 'err'); }
-  };
-  d.showModal();
-}
-
-function limitsDialog(t) {
-  const L = t.limits;
-  const d = makeDialog(`<form novalidate>
-    <div class="dlg-head"><h2>Limiti di ${esc(t.name)}</h2></div>
-    <div class="dlg-body">
-      <div class="num-grid">
-        <label class="field"><span class="label">Mappe</span><input class="input" type="number" name="maps" min="1" max="100" value="${L.maps}"></label>
-        <label class="field"><span class="label">Puntine per mappa</span><input class="input" type="number" name="pointsPerMap" min="10" max="1500" value="${L.pointsPerMap}"></label>
-        <label class="field"><span class="label">Classi</span><input class="input" type="number" name="classes" min="1" max="50" value="${L.classes}"></label>
-        <label class="field"><span class="label">Spazio (MB)</span><input class="input" type="number" name="mb" min="10" max="10000" value="${L.mb}"></label>
-      </div>
-      <p class="muted" style="font-size:.85rem;margin:0">Uso attuale: ${t.usage.maps} mappe, ${t.usage.classes} classi, ${String(t.usage.mb).replace('.', ',')} MB. Abbassare un limite non cancella nulla: impedisce solo di aggiungere altro.</p>
-      <p class="err" data-err></p>
-    </div>
-    <div class="dlg-foot"><button class="btn btn-ghost" type="button" data-cancel>Annulla</button><button class="btn" type="submit">Salva limiti</button></div>
-  </form>`);
-  const form = d.querySelector('form');
-  d.querySelector('[data-cancel]').onclick = () => d.close();
-  form.onsubmit = async e => {
-    e.preventDefault();
-    const limits = {};
-    ['maps', 'pointsPerMap', 'classes', 'mb'].forEach(k => { limits[k] = Number(form.elements[k].value); });
-    try {
-      const res = await adm('updateTeacher', { id: t.id, limits: limits });
-      Object.assign(t, res.teacher);
-      d.close();
-      drawTeachers();
-      toast('Limiti aggiornati.', 'ok');
-    } catch (ex) { if (!ex.auth) d.querySelector('[data-err]').textContent = ex.message; }
-  };
-  d.showModal();
-}
-
-async function resetTeacherFlow(t, btn) {
-  const yes = await confirmBox(`Generare una nuova password temporanea per ${t.name}? Quella attuale smetterà subito di funzionare.`, { title: 'Nuova password', ok: 'Genera' });
-  if (!yes) return;
-  await withBusy(btn, async () => {
-    const res = await adm('resetTeacherPassword', { id: t.id });
-    Object.assign(t, res.teacher);
-    drawTeachers();
-    credentialsDialog(res.teacher, res.password, false);
-  });
-}
-
-async function suspendTeacherFlow(t, btn) {
-  const suspend = !t.suspended;
-  if (suspend) {
-    const yes = await confirmBox(`Sospendere ${t.name}? Non potrà più entrare nel pannello. Le sue mappe resteranno consultabili dagli studenti, ma in sola lettura. Potrai riattivarlo quando vuoi.`, { title: 'Sospendi docente', ok: 'Sospendi', danger: true });
-    if (!yes) return;
-  }
-  await withBusy(btn, async () => {
-    const res = await adm('updateTeacher', { id: t.id, suspended: suspend });
-    Object.assign(t, res.teacher);
-    drawTeachers();
-    toast(suspend ? 'Account sospeso.' : 'Account riattivato.', 'ok');
-  });
-}
-
-async function deleteTeacherFlow(t) {
-  const yes = await confirmBox(`Eliminare l'account di ${t.name}? Le sue ${t.usage.maps} mappe e ${t.usage.classes} classi spariranno da MapLab e i codici dei suoi studenti smetteranno di funzionare. La sua cartella finirà nel cestino di Drive (recuperabile per 30 giorni, ma non tornerà in MapLab). Se vuoi solo bloccarlo, usa "Sospendi".`, { title: 'Elimina docente', ok: 'Elimina account', danger: true });
-  if (!yes) return;
-  try {
-    const res = await adm('deleteTeacher', { id: t.id });
-    S.teachers = res.teachers;
-    drawTeachers();
-    toast('Account eliminato.', 'ok');
-  } catch (e) { if (!e.auth) toast(e.message, 'err'); }
-}
-
 // ===================== AVVIO =====================
-(async function start() {
+(function start() {
   let saved = '';
-  try { saved = sessionStorage.getItem('maplab_token') || ''; } catch (e) { /* niente */ }
-  if (!saved) return showLogin();
-  S.token = saved;
-  // Ricaricando la pagina: mostro subito l'ultimo stato e intanto lo aggiorno.
-  const boot = readSaved(sessionStorage, 'maplab_c_boot');
-  if (boot) enter(boot);
-  else content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
-  try {
-    const res = await api('bootstrap', { token: saved });
-    if (!boot || res.mustChange) return enter(res);
-    const before = JSON.stringify([S.classes, S.maps, S.usage, S.me && S.me.limits]);
-    S.me = { role: res.role, username: res.username, name: res.name, limits: res.limits };
-    S.classes = res.classes || [];
-    S.maps = res.maps || [];
-    S.usage = res.usage || null;
-    S.mapsAt = Date.now();
-    persist();
-    const changed = before !== JSON.stringify([S.classes, S.maps, S.usage, S.me.limits]);
-    const hash = location.hash || '#mappe';
-    if (changed && !anyDialogOpen() && !queue.pending && (hash === '#mappe' || hash === '#classi')) route();
-  } catch (e) {
-    saveToken('');
-    clearSaved(sessionStorage, 'maplab_c_');
-    showLogin(e.auth ? '' : e.message);
+  try { saved = sessionStorage.getItem('maplab_admin') || ''; } catch (e) { /* niente */ }
+  if (saved) {
+    S.key = saved;
+    content.innerHTML = '<div class="page-inner"><div class="spinner"></div></div>';
+    doLogin();
+  } else {
+    showLogin();
   }
 })();
 </script>

@@ -419,11 +419,7 @@ async function api(action, params) {
   } catch (e) {
     throw new Error('Il server ha risposto in modo inatteso. Controlla che la Web App sia pubblicata con accesso "Chiunque".');
   }
-  if (!data.ok) {
-    const err = new Error(data.error || 'Errore sconosciuto.');
-    err.auth = !!data.auth; // sessione scaduta o account non più valido
-    throw err;
-  }
+  if (!data.ok) throw new Error(data.error || 'Errore sconosciuto.');
   return data;
 }
 
@@ -1454,7 +1450,7 @@ function renderMapUi() {
   $('mapDesc').textContent = map.description || '';
   $('mapDesc').hidden = !map.description;
 
-  const closed = map.archived || map.locked || map.readOnly || !map.classIds.length;
+  const closed = map.archived || map.locked || !map.classIds.length;
   $('lockChip').hidden = !closed;
   $('lockChip').innerHTML = ui('lock', 14) + 'Solo consultazione';
 
@@ -1566,10 +1562,6 @@ $('btnAdd').onclick = async () => {
     if (!ok) return;
   }
   if (state.blockReason) { toast(state.blockReason, 'err'); return; }
-  if (state.data.map.maxPoints && state.data.points.length >= state.data.map.maxPoints) {
-    toast('Questa mappa ha raggiunto il numero massimo di puntine.', 'err');
-    return;
-  }
   startPlacing({ mode: 'add' });
 };
 

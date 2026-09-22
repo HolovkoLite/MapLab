@@ -400,31 +400,11 @@ const ICONS = {"circle-alert":{"label":"Attenzione","svg":"<circle cx=\"12\" cy=
 /* ================= MapLab — funzioni comuni ================= */
 
 // ---------- Comunicazione con il server (Apps Script) ----------
-// Diagnostica: aggiungendo ?diag all'indirizzo compare un riquadro con i tempi
-// di ogni richiesta (totale e lavoro dello script; la differenza è rete e avvio).
-const DIAG = /[?&]diag\b/.test(location.search);
-const diagLog = [];
-function diagRecord(action, total, server) {
-  diagLog.unshift({ action: action, total: total, server: server, at: new Date().toLocaleTimeString('it-IT') });
-  diagLog.length = Math.min(diagLog.length, 12);
-  if (!DIAG) return;
-  let box = document.getElementById('diagBox');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'diagBox';
-    box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:2000;background:rgba(20,30,35,.92);color:#e8efee;font:12px/1.5 ui-monospace,Consolas,monospace;padding:8px 10px;border-radius:8px;max-width:360px;pointer-events:none';
-    document.body.appendChild(box);
-  }
-  box.innerHTML = '<b>Tempi (ms): totale / script</b><br>' + diagLog.map(d =>
-    `${d.at} ${esc(d.action)}: <b>${d.total}</b> / ${d.server == null ? '?' : d.server}`).join('<br>');
-}
-
 async function api(action, params) {
   if (!WEBAPP_URL || /INSERISCI/.test(WEBAPP_URL)) {
     throw new Error("Manca l'indirizzo del server: inserisci WEBAPP_URL in cima al file (vedi ISTRUZIONI).");
   }
   let res;
-  const t0 = performance.now();
   try {
     res = await fetch(WEBAPP_URL, {
       method: 'POST',
@@ -439,12 +419,7 @@ async function api(action, params) {
   } catch (e) {
     throw new Error('Il server ha risposto in modo inatteso. Controlla che la Web App sia pubblicata con accesso "Chiunque".');
   }
-  diagRecord(action, Math.round(performance.now() - t0), data.ms);
-  if (!data.ok) {
-    const err = new Error(data.error || 'Errore sconosciuto.');
-    err.auth = !!data.auth; // sessione scaduta o account non più valido
-    throw err;
-  }
+  if (!data.ok) throw new Error(data.error || 'Errore sconosciuto.');
   return data;
 }
 
@@ -665,75 +640,23 @@ function driveThumb(fileId, size) {
 // Prova l'anteprima pubblica di Drive; se non funziona (file appena caricato o
 // condivisione vietata dal dominio) chiede l'immagine al server.
 const imageCache = {};
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
-};
-// Se l'anteprima pubblica di Drive non funziona (dominio che blocca la condivisione),
-// dopo qualche tentativo non la provo più e chiedo subito l'immagine al server.
-function drivePublicUsable() {
-  const v = store.get('maplab_drive_public');
-  return v === 'yes' || !(Number(v) >= 3);
-}
-function driveFailed() {
-  const v = store.get('maplab_drive_public');
-  if (v !== 'yes') store.set('maplab_drive_public', String((Number(v) || 0) + 1));
-}
-
-// Al massimo 2 immagini alla volta chieste al server, per non intasarlo.
-let imgActive = 0;
-const imgWaiting = [];
-function limitImage(fn) {
-  return new Promise((resolve, reject) => {
-    const run = () => {
-      imgActive++;
-      fn().then(resolve, reject).finally(() => {
-        imgActive--;
-        const next = imgWaiting.shift();
-        if (next) next();
-      });
-    };
-    if (imgActive < 2) run(); else imgWaiting.push(run);
-  });
-}
-
 function loadDriveImage(img, mapId, fileId, size) {
   if (!fileId) return;
-  const cached = imageCache[fileId] || store.get('maplab_img_' + fileId);
-  if (cached) { imageCache[fileId] = cached; img.src = cached; return; }
-  const viaServer = () => limitImage(() => api('getImage', { mapId: mapId, fileId: fileId })).then(data => {
-    imageCache[fileId] = data.dataUrl;
-    // Le immagini piccole (miniature, foto delle puntine) restano nel browser anche dopo.
-    if (data.dataUrl.length < 250000) store.set('maplab_img_' + fileId, data.dataUrl);
-    img.src = data.dataUrl;
-  }).catch(() => {
-    img.alt = 'Immagine non disponibile';
-    img.dispatchEvent(new Event('maplab-failed'));
-  });
-  if (!drivePublicUsable()) { viaServer(); return; }
-  const url = driveThumb(fileId, size);
-  const onLoad = () => { if (img.src === url) store.set('maplab_drive_public', 'yes'); cleanup(); };
-  const onError = () => { cleanup(); driveFailed(); viaServer(); };
-  const cleanup = () => { img.removeEventListener('load', onLoad); img.removeEventListener('error', onError); };
-  img.addEventListener('load', onLoad);
-  img.addEventListener('error', onError);
-  img.src = url;
-}
-
-// Memoria dei dati già ricevuti: le schermate compaiono subito e si aggiornano dopo.
-function readSaved(storage, key) {
-  try { const v = storage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
-}
-function writeSaved(storage, key, value) {
-  try { storage.setItem(key, JSON.stringify(value)); } catch (e) { /* spazio finito o memoria non disponibile */ }
-}
-function clearSaved(storage, prefix) {
-  try { Object.keys(storage).forEach(k => { if (k.indexOf(prefix) === 0) storage.removeItem(k); }); } catch (e) { /* niente */ }
-}
-
-// Miniatura per gli elenchi (circa 480 px): si carica in un attimo.
-function prepareThumb(file) {
-  return prepareImage(file, 480, 0.75).then(t => ({ base64: t.base64, mime: t.mime }));
+  if (imageCache[fileId]) { img.src = imageCache[fileId]; return; }
+  let triedFallback = false;
+  img.onerror = async () => {
+    if (triedFallback) return;
+    triedFallback = true;
+    try {
+      const data = await api('getImage', { mapId: mapId, fileId: fileId });
+      imageCache[fileId] = data.dataUrl;
+      img.src = data.dataUrl;
+    } catch (e) {
+      img.alt = 'Immagine non disponibile';
+      img.dispatchEvent(new Event('maplab-failed'));
+    }
+  };
+  img.src = driveThumb(fileId, size);
 }
 
 // ---------- Avvisi e dialoghi ----------
@@ -1084,37 +1007,18 @@ class MapViewer {
   }
 
   // Carica l'immagine della carta. w/h servono a impaginare prima del caricamento.
-  // Mostra subito la miniatura (se c'è) e la sostituisce con la carta nitida appena arriva.
-  setImage(mapId, fileId, w, h, thumbId) {
+  setImage(mapId, fileId, w, h) {
     this.showMessage('');
     if (w && h) this._setSize(w, h);
-    const token = (this._imgToken = {});
     return new Promise(resolve => {
-      let done = false;
-      const finish = ok => { if (!done) { done = true; resolve(ok); } };
-      const full = new Image();
-      full.addEventListener('load', () => {
-        if (this._imgToken !== token) return;
-        if (!w || !h || Math.abs(full.naturalWidth / full.naturalHeight - w / h) > 0.02) {
-          this._setSize(full.naturalWidth, full.naturalHeight);
+      this.img.onload = () => {
+        if (!w || !h || Math.abs(this.img.naturalWidth / this.img.naturalHeight - w / h) > 0.02) {
+          this._setSize(this.img.naturalWidth, this.img.naturalHeight);
         }
-        this.img.src = full.src;
-        finish(true);
-      });
-      full.addEventListener('maplab-failed', () => {
-        if (this._imgToken !== token) return;
-        if (!thumbId) this.showMessage('Non riesco a caricare la carta. Riprova più tardi.');
-        finish(false);
-      }, { once: true });
-      if (thumbId && w && h) {
-        const small = new Image();
-        small.addEventListener('load', () => {
-          if (this._imgToken === token && !full.complete) this.img.src = small.src;
-          finish(true);
-        }, { once: true });
-        loadDriveImage(small, mapId, thumbId, 480);
-      }
-      loadDriveImage(full, mapId, fileId, 3000);
+        resolve(true);
+      };
+      this.img.addEventListener('maplab-failed', () => { this.showMessage('Non riesco a caricare la carta. Riprova più tardi.'); resolve(false); }, { once: true });
+      loadDriveImage(this.img, mapId, fileId, 3000);
     });
   }
 
@@ -1320,7 +1224,7 @@ const queue = new SyncQueue({
       state.retryAdd = null;
       if (r && canWrite()) addPointForm(r.x, r.y, r.fields, 'La puntina non è stata salvata. Controlla e riprova.');
     } else if (data && data.map.id === state.mapId) {
-      setData(data);
+      state.data = data;
       renderMapUi();
     }
   }
@@ -1370,7 +1274,6 @@ function renderWho() {
 
 function logout() {
   saveCode('');
-  try { sessionStorage.removeItem('maplab_ident'); } catch (e) { /* niente */ }
   state.ident = null;
   state.blockReason = '';
   state.onlyMine = false;
@@ -1416,7 +1319,6 @@ async function login(code) {
   saveCode(code);
   state.ident = res.identity;
   state.blockReason = res.blockReason || '';
-  rememberIdentity();
   renderWho();
   if (state.mapId) {
     renderMapUi();
@@ -1450,25 +1352,10 @@ function showStart() {
 
 async function showHub() {
   show('screenHub');
-  const key = 'maplab_hub_' + state.code.toUpperCase();
-  const saved = readSaved(sessionStorage, key);
-  if (saved) drawHub(saved); else $('hubCards').innerHTML = '<div class="spinner"></div>';
+  $('hubCards').innerHTML = '<div class="spinner"></div>';
   try {
     const res = await api('listMapsForCode', { code: state.code });
-    writeSaved(sessionStorage, key, res);
-    drawHub(res);
-  } catch (e) {
-    saveCode('');
-    state.ident = null;
-    toast(e.message, 'err');
-    showStart();
-  }
-}
-
-function drawHub(res) {
-  {
     state.ident = res.identity;
-    rememberIdentity();
     renderWho();
     $('hubTitle').textContent = `Le mappe della ${res.identity.className}`;
     $('hubLead').textContent = res.maps.length
@@ -1476,7 +1363,7 @@ function drawHub(res) {
       : 'Per ora l\'insegnante non ha ancora aperto mappe per la tua classe.';
     $('hubCards').innerHTML = res.maps.map(m => `
       <a class="map-card" href="?m=${encodeURIComponent(m.id)}">
-        ${m.imageFileId ? `<img class="thumb" alt="" data-map="${esc(m.id)}" data-file="${esc(m.thumbFileId || m.imageFileId)}">` : '<span class="thumb"></span>'}
+        ${m.imageFileId ? `<img class="thumb" alt="" data-map="${esc(m.id)}" data-file="${esc(m.imageFileId)}">` : '<span class="thumb"></span>'}
         <span class="body">
           <h3>${esc(m.title)}</h3>
           ${m.description ? `<p>${esc(m.description)}</p>` : ''}
@@ -1484,20 +1371,12 @@ function drawHub(res) {
         </span>
       </a>`).join('');
     $('hubCards').querySelectorAll('img[data-file]').forEach(img => loadDriveImage(img, img.dataset.map, img.dataset.file, 600));
+  } catch (e) {
+    saveCode('');
+    state.ident = null;
+    toast(e.message, 'err');
+    showStart();
   }
-}
-
-// L'identità (classe e numero) si ricorda per la sessione: il pulsante "Aggiungi" è subito pronto.
-function rememberIdentity() {
-  if (state.ident && state.code) writeSaved(sessionStorage, 'maplab_ident', { code: state.code, ident: state.ident });
-}
-
-// Salva i dati della mappa per mostrarla subito alla prossima apertura.
-function setData(data) {
-  state.data = data;
-  const copy = Object.assign({}, data);
-  delete copy.identity; delete copy.blockReason; delete copy.codeError;
-  writeSaved(localStorage, 'maplab_map_' + state.mapId, copy);
 }
 
 // ---------- Mappa ----------
@@ -1510,36 +1389,21 @@ async function showMap() {
   show('screenMap');
   $('titleSep').hidden = false;
   if (window.innerWidth <= 760) $('screenMap').classList.add('panel-closed');
-  // Se questa mappa è già stata aperta, la mostro subito e intanto chiedo quella aggiornata.
-  const savedIdent = readSaved(sessionStorage, 'maplab_ident');
-  if (savedIdent && savedIdent.code === state.code) state.ident = savedIdent.ident;
   renderWho();
-  const saved = readSaved(localStorage, 'maplab_map_' + state.mapId);
-  const showImage = map => {
-    document.title = map.title + ' — MapLab';
-    if (map.imageFileId) viewer.setImage(state.mapId, map.imageFileId, map.imageW, map.imageH, map.thumbFileId);
-    else viewer.showMessage('L\'insegnante non ha ancora caricato la carta.');
-  };
-  if (saved) {
-    state.data = saved;
-    showImage(saved.map);
-    renderMapUi();
-  } else {
-    viewer.showMessage('Caricamento della mappa…');
-  }
+  viewer.showMessage('Caricamento della mappa…');
   try {
-    const fresh = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
-    const imageChanged = !saved || saved.map.imageFileId !== fresh.map.imageFileId;
-    if (queue.pending) { adoptIdentity(fresh); } // nel frattempo lo studente ha già aggiunto qualcosa
-    else setData(fresh);
-    if (imageChanged) showImage(fresh.map);
-    adoptIdentity(fresh);
-    renderWho();
-    renderMapUi();
+    state.data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
   } catch (e) {
-    if (!saved) { viewer.showMessage(e.message); return; }
-    toast('Non riesco ad aggiornare la mappa: mostro l\'ultima versione vista.', 'err');
+    viewer.showMessage(e.message);
+    return;
   }
+  const map = state.data.map;
+  document.title = map.title + ' — MapLab';
+  if (map.imageFileId) viewer.setImage(state.mapId, map.imageFileId, map.imageW, map.imageH);
+  else viewer.showMessage('L\'insegnante non ha ancora caricato la carta.');
+  adoptIdentity(state.data);
+  renderWho();
+  renderMapUi();
   setInterval(refresh, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 }
@@ -1558,7 +1422,6 @@ function adoptIdentity(data) {
   if (data.identity) {
     state.ident = data.identity;
     state.blockReason = data.blockReason || '';
-    rememberIdentity();
   }
 }
 
@@ -1568,9 +1431,9 @@ async function refresh() {
     const data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
     if (queue.pending || state.placing) return; // nel frattempo è cambiato qualcosa qui
     const imageChanged = data.map.imageFileId !== state.data.map.imageFileId;
-    setData(data);
+    state.data = data;
     adoptIdentity(data);
-    if (imageChanged && data.map.imageFileId) viewer.setImage(state.mapId, data.map.imageFileId, data.map.imageW, data.map.imageH, data.map.thumbFileId);
+    if (imageChanged && data.map.imageFileId) viewer.setImage(state.mapId, data.map.imageFileId, data.map.imageW, data.map.imageH);
     renderMapUi();
   } catch (e) { /* riproverò al prossimo giro */ }
 }
@@ -1587,7 +1450,7 @@ function renderMapUi() {
   $('mapDesc').textContent = map.description || '';
   $('mapDesc').hidden = !map.description;
 
-  const closed = map.archived || map.locked || map.readOnly || !map.classIds.length;
+  const closed = map.archived || map.locked || !map.classIds.length;
   $('lockChip').hidden = !closed;
   $('lockChip').innerHTML = ui('lock', 14) + 'Solo consultazione';
 
@@ -1699,10 +1562,6 @@ $('btnAdd').onclick = async () => {
     if (!ok) return;
   }
   if (state.blockReason) { toast(state.blockReason, 'err'); return; }
-  if (state.data.map.maxPoints && state.data.points.length >= state.data.map.maxPoints) {
-    toast('Questa mappa ha raggiunto il numero massimo di puntine.', 'err');
-    return;
-  }
   startPlacing({ mode: 'add' });
 };
 
@@ -1821,7 +1680,7 @@ async function removePoint(p) {
 async function reloadNow() {
   try {
     const data = await api('getMap', { mapId: state.mapId, code: state.code || undefined });
-    setData(data);
+    state.data = data;
     adoptIdentity(data);
     renderMapUi();
   } catch (e) { toast(e.message, 'err'); }

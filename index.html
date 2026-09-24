@@ -272,6 +272,7 @@ body.resizing .ed-map{pointer-events:none}
 .ed-tourbox{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:18px;padding:10px 12px;border:1px dashed var(--line);border-radius:var(--r-md);font-size:.88rem}
 .ed-tourbox span{display:inline-flex;align-items:center;gap:6px}
 .ed-typefilter{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.ed-import-crono{width:100%;justify-content:flex-start;margin:0 0 10px}
 .ed-typefilter button{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.8rem;cursor:pointer}
 .ed-typefilter button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-hover);font-weight:600}
 .ed-list{list-style:none;margin:0;padding:0}
@@ -349,9 +350,6 @@ body.resizing .ed-map{pointer-events:none}
 .ed-howto{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;font-size:.9rem}
 .ed-howto summary{cursor:pointer;font-weight:600;color:var(--accent)}
 .ed-howto code{font-size:.8rem;background:#f1f3f3;padding:1px 4px;border-radius:4px;word-break:break-all}
-.ed-help h3{font-size:1rem;margin:14px 0 6px}
-.ed-help ul{padding-left:18px;margin:0}
-.ed-help li{margin:4px 0}
 .ed-keys{border-collapse:collapse;font-size:.9rem}
 .ed-keys td{padding:4px 12px 4px 0;border-bottom:1px solid var(--line-2)}
 .ed-keys td:first-child{font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
@@ -408,6 +406,75 @@ dialog.ed-expdlg{width:min(900px,calc(100vw - 24px))}
 @media (max-width:760px){
   .ed-expkinds{grid-template-columns:1fr}
   .ed-expimg{grid-template-columns:1fr}
+}
+/* ================= Tutorial (stesso impianto del Tutorial di CronoLab) ================= */
+dialog.dlg.tutorial-dlg{width:min(1120px,calc(100vw - 24px));height:min(860px,calc(100dvh - 24px))}
+.tutorial-dlg .dlg-head{flex:none;height:58px;box-sizing:border-box;padding:0 12px 0 20px;border-bottom:1px solid var(--line)}
+.tutorial-body{flex:1 1 auto;min-height:0;overflow:auto;background:#f5f7f6;scroll-behavior:smooth}
+.tutorial-layout{display:grid;grid-template-columns:235px minmax(0,1fr);align-items:stretch;min-height:100%;background:linear-gradient(90deg,#fff 0,#fff 235px,#f5f7f6 235px,#f5f7f6 100%)}
+.tutorial-menu{position:sticky;top:0;z-index:3;align-self:start;height:calc(min(860px,100dvh - 24px) - 58px);overflow:auto;padding:24px 18px;box-sizing:border-box;border-right:1px solid var(--line);background:#fff}
+.tutorial-menu-title{margin:0 0 13px;color:var(--ink-3);font-size:.67rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+.tutorial-menu nav{display:grid;gap:5px}
+.tutorial-menu a{display:block;padding:9px 10px;border-radius:9px;color:var(--ink-2);font-size:.8rem;font-weight:700;text-decoration:none;transition:.15s ease}
+.tutorial-menu a:hover,.tutorial-menu a:focus-visible{background:var(--accent-soft);color:var(--accent);outline:none}
+.tutorial-content{min-width:0;padding:32px clamp(24px,4vw,52px) 64px}
+.tutorial-intro{padding:28px clamp(22px,4vw,38px);border:1px solid #d5e3e6;border-radius:20px;background:linear-gradient(135deg,#fff,#e9f1f2);box-shadow:0 14px 40px #2c5a6612}
+.tutorial-kicker{margin:0 0 7px;color:var(--accent);font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.tutorial-intro h2,.tutorial-changelog h2{margin:0 0 12px;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.12;letter-spacing:-.03em}
+.tutorial-intro>p:not(.tutorial-kicker){max-width:760px;margin:9px 0;color:var(--ink-2);font-size:.92rem;line-height:1.66}
+.tutorial-version-link{color:var(--accent);font-weight:700;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;white-space:nowrap}
+.tutorial-version-link:hover,.tutorial-version-link:focus-visible{color:var(--accent-hover);text-decoration-thickness:2px}
+.tutorial-beta{padding:11px 13px;border-left:4px solid #d89438;border-radius:8px;background:#fff8e9;color:#6f5228!important}
+.tutorial-section{margin-top:42px;scroll-margin-top:18px}
+.tutorial-section-heading{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.tutorial-section-number{display:grid;place-items:center;width:31px;height:31px;flex:none;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:.7rem;font-weight:800}
+.tutorial-section h3{margin:0;font-size:1.12rem;letter-spacing:-.01em}
+.tutorial-faq-list{display:grid;gap:9px}
+.tutorial-faq{border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 5px 18px #1d252908;overflow:hidden}
+.tutorial-faq summary{position:relative;display:flex;align-items:center;min-height:52px;padding:14px 48px 14px 17px;list-style:none;color:var(--ink);font-size:.88rem;font-weight:700;line-height:1.4;cursor:pointer}
+.tutorial-faq summary::-webkit-details-marker{display:none}
+.tutorial-faq summary:after{content:"+";position:absolute;right:16px;display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:1.05rem;line-height:1}
+.tutorial-faq[open] summary{color:var(--accent);border-bottom:1px solid var(--line);background:#fafcfb}
+.tutorial-faq[open] summary:after{content:"−"}
+.tutorial-faq summary:hover,.tutorial-faq summary:focus-visible{background:#f3f7f7;outline:none}
+.tutorial-answer{padding:16px 18px 18px;color:var(--ink-2);font-size:.85rem;line-height:1.66}
+.tutorial-answer p{margin:0 0 10px}
+.tutorial-answer p:last-child,.tutorial-answer ul:last-child,.tutorial-answer table:last-child{margin-bottom:0}
+.tutorial-answer ul{margin:8px 0 13px;padding-left:21px}
+.tutorial-answer li+li{margin-top:5px}
+.tutorial-answer strong{color:var(--ink)}
+.tutorial-answer a,.tutorial-changelog a{color:var(--accent);font-weight:700}
+.tutorial-tip{padding:10px 12px;border-radius:9px;background:#eef4f5;color:#3d5157}
+.tutorial-keys{width:100%;border-collapse:collapse;margin:0 0 12px}
+.tutorial-keys td{padding:7px 8px;border-bottom:1px solid var(--line-2);vertical-align:top}
+.tutorial-keys td:first-child{width:1%;padding-right:18px;white-space:nowrap}
+.tutorial-keys kbd{display:inline-block;min-width:1.6em;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:#fff;color:var(--ink);font:600 .78rem var(--sans);text-align:center}
+.tutorial-changelog{max-width:850px;margin:0 auto;padding:34px clamp(22px,5vw,54px) 64px}
+.tutorial-back{display:inline-flex;margin-bottom:23px;text-decoration:none}
+.tutorial-changelog-header{padding-bottom:22px;border-bottom:1px solid var(--line)}
+.tutorial-changelog-header p{max-width:680px;margin:0;color:var(--ink-3);font-size:.87rem;line-height:1.6}
+.tutorial-release{margin-top:26px;padding:24px;border:1px solid var(--line);border-radius:17px;background:#fff;box-shadow:0 9px 30px #1d25290b}
+.tutorial-release-current{border-color:#c9dcdf;box-shadow:0 12px 34px #2c5a6614}
+.tutorial-release-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.tutorial-release h3{margin:0;font-size:1.15rem}
+.tutorial-release-badge{padding:4px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.tutorial-release h4{margin:18px 0 7px;font-size:.86rem}
+.tutorial-release ul{margin:0;padding-left:20px;color:var(--ink-2);font-size:.83rem;line-height:1.62}
+.tutorial-release li+li{margin-top:5px}
+@media(max-width:820px){
+  .tutorial-layout{display:block;background:#f5f7f6}
+  .tutorial-menu{height:auto;padding:10px 13px;border-right:0;border-bottom:1px solid var(--line);box-shadow:0 7px 18px #1d252912}
+  .tutorial-menu-title{display:none}
+  .tutorial-menu nav{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+  .tutorial-menu a{flex:none;padding:8px 9px;font-size:.74rem}
+  .tutorial-content{padding:18px 14px 48px}
+  .tutorial-intro{padding:21px 18px;border-radius:16px}
+  .tutorial-section{margin-top:32px}
+  .tutorial-faq summary{padding-left:14px;font-size:.84rem}
+  .tutorial-answer{padding:14px;font-size:.82rem}
+  .tutorial-keys td:first-child{white-space:normal}
+  .tutorial-changelog{padding:24px 16px 48px}
+  .tutorial-release{padding:19px}
 }
 </style>
 <script type="text/plain" id="ml-viewer-css">
@@ -567,6 +634,561 @@ body.lim .vw-lg{font-size:1rem}
 </script>
 </head>
 <body>
+<!--
+  CONTENUTO DEL TUTORIAL
+  Puoi modificare testi, titoli, grassetti e collegamenti direttamente nei tag HTML qui sotto.
+  Non cambiare gli attributi id, href e data-tutorial-page: servono alla navigazione.
+-->
+<template id="maplab-tutorial-content">
+  <div class="tutorial-layout">
+    <aside class="tutorial-menu" aria-label="Sezioni del Tutorial">
+      <p class="tutorial-menu-title">In questa pagina</p>
+      <nav>
+        <a href="#tutorial-primi-passi">Primi passi</a>
+        <a href="#tutorial-strumenti">Strumenti</a>
+        <a href="#tutorial-contenuti">Contenuti</a>
+        <a href="#tutorial-date">Date e linea del tempo</a>
+        <a href="#tutorial-visualizzatore">Visualizzatore</a>
+        <a href="#tutorial-esportazione">Esportazione</a>
+        <a href="#tutorial-scorciatoie">Scorciatoie</a>
+        <a href="#tutorial-didattica">Uso didattico</a>
+      </nav>
+    </aside>
+
+    <article class="tutorial-content">
+      <header class="tutorial-intro" id="tutorial-inizio">
+        <p class="tutorial-kicker">Tutorial</p>
+        <h2>Creare e usare una mappa interattiva con MapLab</h2>
+        <p>
+          MapLab è uno strumento per creare <strong>mappe didattiche interattive</strong> a partire da un’immagine:
+          sulla carta si aggiungono puntine, percorsi, territori e nomi, con testi, immagini e date
+          (<a class="tutorial-version-link" href="#" data-tutorial-page="changes">versione 0.2</a>).
+        </p>
+        <p class="tutorial-beta">
+          <strong>MapLab è ancora in versione beta.</strong> Potrebbero quindi esserci errori e alcune funzioni
+          potrebbero cambiare, essere spostate o venire migliorate da un momento all’altro.
+        </p>
+      </header>
+
+      <section class="tutorial-section" id="tutorial-primi-passi">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">01</span>
+          <h3>Primi passi</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Da dove conviene iniziare?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Dalla schermata iniziale scegli <strong>Nuova mappa</strong> e poi la carta: un’immagine dal computer
+                (JPG, PNG, WebP o SVG) oppure il link della pagina di un file su <strong>Wikimedia Commons</strong>.
+                In alternativa, <strong>Apri una mappa</strong> riapre un file HTML esportato in precedenza con MapLab.
+                Puoi anche trascinare l’immagine o il file direttamente nella finestra.
+              </p>
+              <p>
+                Nella scheda <strong>Mappa</strong> inserisci poi il titolo, la consegna per gli studenti, l’autore
+                e la fonte della carta.
+              </p>
+              <p class="tutorial-tip">
+                Per prendere confidenza con MapLab, prova prima ad aggiungere tre elementi: una puntina, una freccia e un’area.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Quale immagine conviene usare come carta?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Un’immagine grande e nitida: quando gli studenti ingrandiscono, un’immagine piccola si sgrana presto.
+                Un file <strong>SVG</strong> resta nitido a qualsiasi ingrandimento. Per le immagini molto grandi MapLab
+                chiede la <strong>qualità della carta</strong>: la qualità alta è quella consigliata, la massima produce
+                file più pesanti.
+              </p>
+              <p>
+                Con un link di Wikimedia Commons MapLab scarica l’immagine alla risoluzione più alta e compila la fonte
+                con autore e licenza. Per le altre immagini indica tu la fonte nella scheda Mappa. La carta si può cambiare
+                in seguito con <strong>Sostituisci la carta</strong>: se la nuova immagine ha proporzioni diverse,
+                gli elementi già disegnati potrebbero non combaciare più.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Il lavoro viene salvato automaticamente?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Mentre lavori, MapLab conserva una <strong>bozza</strong> nel browser: se chiudi la pagina, la ritrovi
+                nella schermata iniziale con <strong>Riprendi il lavoro</strong>. La bozza resta però solo su quel
+                computer e in quel browser, e può essere cancellata insieme ai dati di navigazione.
+              </p>
+              <p>
+                Per conservare davvero il lavoro usa <strong>Esporta</strong>: la pagina HTML esportata è anche il file
+                da riaprire con <strong>Apri</strong> per continuare a modificare la mappa.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come funzionano Annulla e Ripeti?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Puoi usare i pulsanti nella barra superiore oppure le scorciatoie <strong>Ctrl/Cmd+Z</strong>,
+                <strong>Ctrl/Cmd+Maiusc+Z</strong> e <strong>Ctrl/Cmd+Y</strong>. MapLab conserva le ultime
+                <strong>150 azioni</strong>. La sostituzione della carta non si può annullare.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-strumenti">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">02</span>
+          <h3>Strumenti</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Quali strumenti ci sono?</summary>
+            <div class="tutorial-answer">
+              <ul>
+                <li><strong>Seleziona (V)</strong>: un clic su un elemento lo apre nel pannello; trascinandolo lo sposti.</li>
+                <li><strong>Puntina (P)</strong>: un clic sulla carta. Per luoghi, eventi e personaggi.</li>
+                <li><strong>Freccia (F)</strong>: per spostamenti, campagne, rotte e migrazioni.</li>
+                <li><strong>Area (A)</strong>: per territori, regni, imperi e zone d’influenza.</li>
+                <li><strong>Testo (T)</strong>: un clic per scrivere un nome sulla carta, come mari, regioni o popoli.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si disegnano frecce e aree?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Per una <strong>freccia</strong> clicca i punti del percorso nell’ordine, dal primo all’ultimo, e termina
+                con un doppio clic o con <strong>Invio</strong>. Per un’<strong>area</strong> clicca i punti del confine
+                e chiudila cliccando di nuovo sul primo punto o premendo <strong>Invio</strong>.
+                <strong>Esc</strong> annulla il disegno in corso.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si modificano gli elementi già disegnati?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Con <strong>Seleziona</strong> puoi trascinare un elemento o i suoi punti. Trascinando i piccoli punti che
+                si trovano a metà di ogni lato aggiungi un nuovo punto; con un doppio clic su un punto lo togli.
+                Nel pannello dell’elemento trovi i pulsanti <strong>Inquadra sulla carta</strong>, <strong>Duplica</strong>
+                ed <strong>Elimina</strong>.
+              </p>
+              <p>
+                La scheda <strong>Elenco</strong> mostra tutti gli elementi della mappa: è utile per ritrovarli
+                e per controllare che abbiano un titolo e una data.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si scrivono i nomi sulla carta?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Con lo strumento <strong>Testo</strong> fai clic nel punto in cui vuoi scrivere. Nel pannello scegli il
+                <strong>tipo di nome</strong> (Stato/regione, Popolo, Città, Mare/fiume, Monti o Libero), che imposta
+                colore e stile; puoi poi cambiare maiuscolo, corsivo, grassetto, grandezza, rotazione e colore.
+                L’<strong>alone chiaro</strong> intorno alle lettere rende il nome leggibile anche sopra una carta scura.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-contenuti">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">03</span>
+          <h3>Contenuti</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Che cosa si può inserire in un elemento?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Puntine, frecce e aree hanno un <strong>titolo</strong>, una <strong>descrizione</strong>, un colore,
+                una data e un’immagine. Nella descrizione una riga vuota separa i paragrafi e gli indirizzi web
+                diventano link. Le puntine hanno anche una <strong>categoria</strong> e una
+                <strong>grandezza</strong>.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come funzionano le categorie?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Le categorie danno a ogni puntina un’<strong>icona</strong> e un <strong>colore</strong> e formano
+                la legenda per gli studenti. Si creano e si modificano nella scheda <strong>Categorie</strong>, dove puoi
+                scegliere l’icona tra quelle disponibili, il nome e il colore. Se il colore di una puntina è impostato su
+                <strong>A</strong> (automatico), segue quello della sua categoria.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si aggiungono le immagini?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Nel pannello dell’elemento puoi caricare un’immagine dal computer oppure incollare un link che inizia con
+                https://. Con un link di Wikimedia Commons MapLab inserisce da solo autore e licenza nel campo
+                <strong>Fonte / autore</strong>. Puoi aggiungere una <strong>didascalia</strong>; gli studenti vedono
+                l’immagine nella scheda dell’elemento e possono ingrandirla.
+              </p>
+              <p class="tutorial-tip">
+                Le immagini caricate dal computer sono incluse nel file esportato e funzionano anche senza connessione.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si personalizzano frecce e aree?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Per le <strong>frecce</strong> puoi scegliere spessore, tratto (continuo, tratteggiato o puntinato),
+                punta e, per le frecce con due soli punti, una linea curva. Per le <strong>aree</strong> puoi regolare
+                trasparenza, riempimento, bordo e bordi arrotondati, e scrivere il nome dentro l’area.
+                Con <strong>Mostra nella legenda</strong> frecce e aree compaiono nella legenda degli studenti.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-date">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">04</span>
+          <h3>Date e linea del tempo</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Come si assegna una data a un elemento?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Nei campi <strong>Dal</strong> e <strong>al</strong> scrivi l’anno e scegli a.C. o d.C.
+                Con un anno solo l’elemento è un <strong>evento</strong>; con due anni è un <strong>periodo</strong>
+                ed è visibile solo in quegli anni. Se la data non è certa, spunta <strong>circa</strong>.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come funziona la linea del tempo?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Quando almeno un elemento ha una data, sotto la carta compare la linea del tempo: spostando il cursore
+                o premendo ▶ gli elementi compaiono e scompaiono secondo la loro data. La scala può essere
+                <strong>Anni</strong> (distanze proporzionali agli anni) oppure <strong>Eventi</strong> (un passo per ogni
+                data, senza vuoti). <strong>Tutte le date</strong> mostra insieme tutti gli elementi.
+              </p>
+              <p>
+                Nella scheda <strong>Mappa</strong> scegli se mostrare la linea del tempo agli studenti, la scala
+                e la velocità con cui si apre. Nell’editor la linea resta sempre visibile.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-visualizzatore">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">05</span>
+          <h3>Visualizzatore</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Che cosa vedono gli studenti?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Il file esportato si apre con la consegna e permette di spostarsi e ingrandire la carta, aprire la scheda
+                di ogni elemento, cercare nell’<strong>Elenco</strong>, attivare o nascondere le voci della
+                <strong>legenda</strong> e usare la linea del tempo. Gli studenti possono consultare la mappa,
+                ma non modificarla.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si prepara una visita guidata?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Nella scheda <strong>Visita</strong> aggiungi gli elementi come tappe, uno alla volta oppure tutti
+                quelli datati in ordine cronologico. A ogni tappa la carta inquadra l’elemento, mostra il suo testo e,
+                se c’è una data, porta la linea del tempo a quell’anno. Per scegliere l’inquadratura di una tappa,
+                sistema la carta e premi l’icona della fotocamera accanto alla tappa.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Che cos’è il Ripasso?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Nel Ripasso i nomi degli elementi sono nascosti: lo studente prova a riconoscerli, mostra la risposta
+                e indica se la sapeva. Si attiva nella scheda <strong>Mappa</strong>, nella sezione
+                <strong>Per gli studenti</strong>, e richiede almeno due elementi con un titolo.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Si può usare la mappa sulla LIM?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Sì. Il pulsante <strong>LIM</strong> del visualizzatore apre la mappa a schermo intero con pulsanti
+                e caratteri più grandi. La visita guidata è pensata anche per essere proiettata durante la spiegazione.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si controlla il risultato prima di condividerlo?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Usa <strong>Anteprima</strong>, che mostra la mappa come la vedranno gli studenti. Verifica schede,
+                immagini, legenda, linea del tempo, visita guidata e Ripasso.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-esportazione">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">06</span>
+          <h3>Esportazione</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Quali formati si possono esportare?</summary>
+            <div class="tutorial-answer">
+              <ul>
+                <li><strong>Pagina interattiva (HTML)</strong>: la mappa per gli studenti, che è anche il file da riaprire
+                  in MapLab.</li>
+                <li><strong>Immagine (PNG)</strong>: in risoluzione normale o alta.</li>
+                <li><strong>PDF da stampare</strong>.</li>
+              </ul>
+              <p>
+                Ogni esportazione crea un nuovo file e non sovrascrive quelli precedenti. Oltre i 25 MB compare
+                un avviso sul peso del file.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si riprende a modificare una mappa esportata?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Con <strong>Apri</strong> scegli il file HTML esportato: la mappa torna nell’editor con tutti gli
+                elementi, le categorie, le immagini e la visita guidata. Se la mappa aperta contiene modifiche non
+                esportate, MapLab chiede conferma prima di sostituirla.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si prepara una carta muta o una carta per un anno preciso?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Nell’esportazione in PNG o PDF puoi scegliere se includere titolo e autore, legenda, nomi accanto
+                alle puntine e scritte sulla carta. Togliendo i nomi ottieni una <strong>carta muta</strong> da usare
+                per esercizi. Puoi esportare tutta la carta o solo la parte inquadrata e, se usi la linea del tempo,
+                solo gli elementi dell’anno selezionato.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si collegano MapLab e CronoLab?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Nella scheda <strong>Elenco</strong>, <strong>Importa da CronoLab</strong> porta sulla carta le capsule
+                di una linea del tempo (file HTML o JSON di CronoLab) con titolo, testo, data, categoria e immagine.
+                CronoLab non conosce la posizione dei luoghi: le puntine arrivano in alto a sinistra e vanno trascinate
+                nel punto giusto. Le capsule domanda non vengono importate.
+              </p>
+              <p>
+                In CronoLab, <strong>Strumenti › Importa da MapLab</strong> fa il percorso inverso: gli elementi della
+                mappa che hanno una data diventano capsule.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come si può condividere una mappa?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Puoi inviare il file HTML, caricarlo su Classroom o Drive, inserirlo in Google Sites oppure pubblicarlo
+                con un servizio che ospita pagine web, come GitHub Pages. Le istruzioni sono nella finestra
+                <strong>Esporta</strong>, alla voce «Come pubblicarla per gli studenti». Prima di condividere controlla
+                <strong>diritti d’uso delle immagini, fonti e dati personali</strong>.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-scorciatoie">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">07</span>
+          <h3>Scorciatoie</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Quali scorciatoie da tastiera ci sono?</summary>
+            <div class="tutorial-answer">
+              <table class="tutorial-keys">
+                <tbody>
+                  <tr><td><kbd>V</kbd> <kbd>P</kbd> <kbd>F</kbd> <kbd>A</kbd> <kbd>T</kbd></td><td>Seleziona, Puntina, Freccia, Area, Testo</td></tr>
+                  <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd></td><td>Annulla</td></tr>
+                  <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>Y</kbd> oppure <kbd>Ctrl/Cmd</kbd>+<kbd>Maiusc</kbd>+<kbd>Z</kbd></td><td>Ripeti</td></tr>
+                  <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>S</kbd></td><td>Esporta la mappa</td></tr>
+                  <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>D</kbd></td><td>Duplica l’elemento selezionato</td></tr>
+                  <tr><td><kbd>Canc</kbd></td><td>Elimina l’elemento selezionato</td></tr>
+                  <tr><td><kbd>Invio</kbd></td><td>Termina la freccia o l’area in disegno</td></tr>
+                  <tr><td><kbd>Esc</kbd></td><td>Annulla il disegno, torna a Seleziona, deseleziona</td></tr>
+                  <tr><td>Rotellina, <kbd>+</kbd> e <kbd>−</kbd></td><td>Ingrandisci e rimpicciolisci la carta</td></tr>
+                </tbody>
+              </table>
+              <p>Le scorciatoie non funzionano mentre stai scrivendo in un campo o quando è aperta una finestra.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="tutorial-section" id="tutorial-didattica">
+        <div class="tutorial-section-heading">
+          <span class="tutorial-section-number">08</span>
+          <h3>Uso didattico</h3>
+        </div>
+        <div class="tutorial-faq-list">
+          <details class="tutorial-faq">
+            <summary>Quale idea didattica c’è dietro MapLab?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Una carta non serve soltanto a localizzare: rende visibili <strong>spazi, spostamenti, confini,
+                relazioni tra luoghi e cambiamenti nel tempo</strong>. Collegando testi, immagini e date agli elementi
+                della carta, chi studia può ricostruire un fenomeno invece di osservare un’immagine statica.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come può essere usato MapLab in classe?</summary>
+            <div class="tutorial-answer">
+              <ul>
+                <li>Come supporto a una spiegazione, con la <strong>visita guidata</strong> e la modalità <strong>LIM</strong>.</li>
+                <li>Per seguire l’evoluzione di confini e spostamenti con la <strong>linea del tempo</strong>.</li>
+                <li>Per un lavoro di gruppo in cui ogni gruppo cura una categoria, un periodo o una parte della carta.</li>
+                <li>Per un ripasso con la modalità <strong>Ripasso</strong> o con una carta muta stampata.</li>
+                <li>Per discutere la scelta e la citazione delle fonti, a partire dalla fonte della carta.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come può essere usato a casa?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Può diventare un percorso di studio autonomo, un ripasso oppure una consegna da completare e discutere
+                in seguito. Il file esportato funziona anche senza connessione, con le immagini incluse; i link esterni
+                inseriti nelle descrizioni richiedono invece una connessione.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come rendere la mappa più accessibile e leggibile?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Usa titoli brevi, descrizioni chiare e una carta nitida. Non affidare un significato soltanto al colore:
+                usa anche icone, nomi e legenda. Evita di sovrapporre troppi elementi nella stessa zona e verifica
+                che la mappa resti leggibile su uno schermo piccolo e sulla LIM.
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Posso usare liberamente MapLab?</summary>
+            <div class="tutorial-answer">
+              <p>
+                MapLab è un progetto ideato e realizzato da Tommaso Sereni.
+                Può essere <strong>utilizzato liberamente</strong> per scopi personali, didattici e professionali.
+              </p>
+              <p>
+                Chi utilizza MapLab è responsabile dei contenuti che crea, modifica, importa, esporta o condivide tramite lo strumento.
+                L’autore di MapLab <strong>non è responsabile dei contenuti prodotti dagli utenti né dell’uso che ne viene fatto</strong>.
+              </p>
+              <p>
+                MapLab viene messo a disposizione liberamente e può essere utilizzato e condiviso, mantenendo il riferimento al progetto e al suo autore.
+              </p>
+              <p>
+                MapLab include le icone Lucide (licenza ISC).
+              </p>
+            </div>
+          </details>
+
+          <details class="tutorial-faq">
+            <summary>Come posso segnalare un errore, dare un suggerimento o chiedere informazioni?</summary>
+            <div class="tutorial-answer">
+              <p>
+                Per segnalazioni, suggerimenti o richieste di informazioni puoi scrivere a
+                <a href="mailto:tms.sereni@gmail.com">tms.sereni@gmail.com</a>.
+                Se segnali un errore, indica possibilmente il browser usato e i passaggi che lo hanno prodotto.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+    </article>
+  </div>
+</template>
+
+<!-- PAGINA DELLE NOVITÀ: anche questo contenuto è in HTML tradizionale. -->
+<template id="maplab-changelog-content">
+  <article class="tutorial-changelog">
+    <a class="tutorial-back" href="#" data-tutorial-page="tutorial">← Torna al Tutorial</a>
+    <header class="tutorial-changelog-header">
+      <p class="tutorial-kicker">Cronologia delle versioni</p>
+      <h2>Novità di MapLab</h2>
+      <p>Questa pagina riassume le funzioni introdotte nelle diverse versioni pubbliche.</p>
+    </header>
+
+    <section class="tutorial-release tutorial-release-current">
+      <div class="tutorial-release-head">
+        <h3>Versione 0.2</h3>
+        <span class="tutorial-release-badge">Versione attuale</span>
+      </div>
+      <h4>Collegamento con CronoLab</h4>
+      <ul>
+        <li><strong>Importa da CronoLab</strong>, nella scheda Elenco: le capsule di una linea del tempo diventano puntine con titolo, testo, data, categoria e immagine.</li>
+        <li>CronoLab 0.6 può a sua volta importare gli elementi datati di una mappa.</li>
+      </ul>
+      <h4>Interfaccia</h4>
+      <ul>
+        <li>La Guida rapida è sostituita dal <strong>Tutorial</strong>, organizzato per sezioni, con la cronologia delle versioni.</li>
+        <li>Nella scheda del browser l’editor compare come «MapLab».</li>
+      </ul>
+    </section>
+
+    <section class="tutorial-release">
+      <div class="tutorial-release-head">
+        <h3>Versione 0.1</h3>
+        <span class="tutorial-release-badge">Prima versione</span>
+      </div>
+      <ul>
+        <li>Prima versione dell’editor per creare mappe interattive con puntine, aree e linea del tempo.</li>
+      </ul>
+    </section>
+  </article>
+</template>
+
 <script id="ml-core-js">
 /* Icone: Lucide (lucide.dev), licenza ISC */
 const ICONS = {"circle-alert":{"label":"Attenzione","svg":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"/><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"/>"},
@@ -670,7 +1292,8 @@ const ICONS = {"circle-alert":{"label":"Attenzione","svg":"<circle cx=\"12\" cy=
 /* ================= MapLab — motore comune (editor e visualizzatore) ================= */
 'use strict';
 
-const MAPLAB_VERSION = 1;
+const MAPLAB_VERSION = 1;          // versione del formato dei file (non cambiarla: serve a riaprire le mappe)
+const MAPLAB_APP_VERSION = '0.2';  // versione del programma, mostrata nel Tutorial e nei file esportati
 
 // Indirizzo della pagina di MapLab (l'editor su GitHub).
 // Nelle mappe esportate il logo in alto a sinistra apre questo indirizzo
@@ -825,7 +1448,7 @@ const UI_ICONS = {
 function ui(name, size) {
   return `<svg width="${size || 18}" height="${size || 18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${UI_ICONS[name] || ''}</svg>`;
 }
-// Logo di MapLab: due cime le cui discese si incrociano (famiglia "Lab", come CronoLab).
+// Logo di MapLab: due cime le cui discese si incrociano.
 const LOGO_MARK = '<g transform="translate(-12 -41)"><path d="M195.9 843.7 L201.4 829.1 L206.9 814.6 L212.4 800 L217.9 785.5 L223.4 770.9 L228.9 756.4 L234.4 741.8 L239.9 727.3 L245.4 712.7 L250.9 698.2 L256.4 683.6 L261.9 669.1 L267.4 654.5 L272.9 640 L278.4 625.4 L283.9 610.9 L289.4 596.3 L294.9 581.8 L300.4 567.2 L305.9 552.7 L311.4 538.1 L316.9 523.6 L322.4 509 L327.9 494.5 L333.4 479.9 L338.9 465.4 L344.4 450.8 L349.9 436.3 L355.4 421.7 L360.9 407.2 L366.4 392.6 L371.9 378.1 L377.4 363.5 L382.9 349 L388.4 334.4 L393.9 319.9 L399.4 305.3 L404.9 290.8 L410.4 276.2 L415.9 261.7 L354.1 238.3 L348.6 252.9 L343.1 267.4 L337.6 282 L332.1 296.5 L326.6 311.1 L321.1 325.6 L315.6 340.2 L310.1 354.7 L304.6 369.3 L299.1 383.8 L293.6 398.4 L288.1 412.9 L282.6 427.5 L277.1 442 L271.6 456.6 L266.1 471.1 L260.6 485.7 L255.1 500.2 L249.6 514.8 L244.1 529.3 L238.6 543.9 L233.1 558.4 L227.6 573 L222.1 587.5 L216.6 602.1 L211.1 616.6 L205.6 631.2 L200.1 645.7 L194.6 660.3 L189.1 674.8 L183.6 689.4 L178.1 703.9 L172.6 718.5 L167.1 733 L161.6 747.6 L156.1 762.1 L150.6 776.7 L145.1 791.2 L139.6 805.8 L134.1 820.3Z"/><circle cx="165" cy="832" r="33"/><circle cx="385" cy="250" r="33"/><path d="M354.8 263.2 L362.6 277.2 L370.6 291 L378.9 304.7 L387.3 318.4 L395.8 332 L404.5 345.5 L413.2 359.1 L421.9 372.6 L430.6 386.1 L439.3 399.6 L448 413.2 L456.5 426.8 L464.9 440.5 L473.1 454.2 L481.1 468 L488.9 482 L496.4 496 L503.6 510.2 L510.5 524.5 L517.1 539 L523.3 553.6 L529.1 568.4 L534.6 583.3 L539.9 598.4 L544.8 613.5 L549.6 628.8 L554.1 644.2 L558.5 659.6 L562.7 675.1 L566.8 690.6 L570.9 706.2 L574.9 721.8 L578.9 737.4 L583 752.9 L587.1 768.5 L591.3 784 L595.6 799.4 L600.1 814.8 L604.8 830.1 L609.8 845.2 L670.2 818.8 L665 803.7 L659.5 788.8 L653.8 773.9 L647.9 759.2 L641.8 744.5 L635.5 729.9 L629.1 715.4 L622.5 700.9 L615.8 686.5 L609 672.2 L602.1 657.8 L595.2 643.5 L588.3 629.2 L581.3 614.9 L574.4 600.6 L567.5 586.3 L560.7 571.9 L554 557.5 L547.4 543.1 L540.9 528.6 L534.6 514 L528.5 499.3 L522.4 484.6 L516.5 469.9 L510.6 455.1 L504.8 440.3 L499 425.5 L493.2 410.7 L487.4 395.9 L481.5 381.2 L475.5 366.4 L469.5 351.7 L463.3 337.1 L457 322.5 L450.5 308 L443.9 293.6 L437.1 279.2 L430 265 L422.8 250.8 L415.2 236.8Z"/><circle cx="385" cy="250" r="33"/><circle cx="640" cy="832" r="33"/><path d="M448.7 848.4 L455.6 838.7 L462.4 828.9 L468.9 818.9 L475.2 808.9 L481.3 798.7 L487.3 788.5 L493.1 778.1 L498.7 767.7 L504.3 757.2 L509.8 746.7 L515.2 736.1 L520.6 725.5 L525.9 714.9 L531.2 704.3 L536.6 693.7 L542 683.2 L547.4 672.6 L553 662.1 L558.6 651.7 L564.4 641.4 L570.4 631.1 L576.5 620.9 L582.7 610.8 L589 600.8 L595.3 590.7 L601.7 580.7 L608.1 570.7 L614.6 560.7 L620.9 550.7 L627.3 540.7 L633.6 530.6 L639.7 520.5 L645.8 510.3 L651.8 500.1 L657.6 489.7 L663.2 479.3 L668.6 468.7 L673.9 458.1 L678.9 447.3 L683.7 436.4 L626.3 403.6 L621.8 414.7 L617.5 425.9 L613.4 437.2 L609.5 448.6 L605.7 460.1 L601.9 471.6 L598.3 483.2 L594.6 494.8 L591 506.4 L587.3 517.9 L583.6 529.4 L579.7 540.9 L575.8 552.3 L571.6 563.6 L567.3 574.8 L562.8 585.8 L558 596.7 L552.9 607.5 L547.5 618.1 L541.8 628.5 L535.8 638.7 L529.4 648.7 L522.7 658.5 L515.8 668.2 L508.6 677.8 L501.1 687.2 L493.5 696.5 L485.7 705.7 L477.8 714.8 L469.8 723.9 L461.8 733 L453.6 742 L445.5 751 L437.4 760 L429.4 769.1 L421.5 778.2 L413.7 787.4 L406 796.7 L398.6 806.1 L391.3 815.6Z"/><circle cx="420" cy="832" r="33"/><circle cx="655" cy="420" r="33"/><path d="M625.5 434.7 L630.6 445 L635.7 455.3 L640.8 465.6 L646 475.9 L651.1 486.2 L656.2 496.5 L661.3 506.8 L666.5 517.1 L671.6 527.4 L676.7 537.7 L681.8 548 L687 558.3 L692.1 568.6 L697.2 578.9 L702.3 589.2 L707.5 599.5 L712.6 609.8 L717.7 620.1 L722.8 630.4 L728 640.7 L733.1 651 L738.2 661.3 L743.3 671.6 L748.5 681.9 L753.6 692.2 L758.7 702.5 L763.8 712.8 L769 723.1 L774.1 733.4 L779.2 743.7 L784.3 754 L789.5 764.3 L794.6 774.6 L799.7 784.9 L804.8 795.2 L810 805.5 L815.1 815.8 L820.2 826.1 L825.3 836.4 L830.5 846.7 L889.5 817.3 L884.4 807 L879.3 796.7 L874.2 786.4 L869 776.1 L863.9 765.8 L858.8 755.5 L853.7 745.2 L848.5 734.9 L843.4 724.6 L838.3 714.3 L833.2 704 L828 693.7 L822.9 683.4 L817.8 673.1 L812.7 662.8 L807.5 652.5 L802.4 642.2 L797.3 631.9 L792.2 621.6 L787 611.3 L781.9 601 L776.8 590.7 L771.7 580.4 L766.5 570.1 L761.4 559.8 L756.3 549.5 L751.2 539.2 L746 528.9 L740.9 518.6 L735.8 508.3 L730.7 498 L725.5 487.7 L720.4 477.4 L715.3 467.1 L710.2 456.8 L705 446.5 L699.9 436.2 L694.8 425.9 L689.7 415.6 L684.5 405.3Z"/><circle cx="655" cy="420" r="33"/><circle cx="860" cy="832" r="33"/></g>';
 const BRAND_SVG = `<svg width="26" height="26" viewBox="0 0 1000 1000" aria-hidden="true"><rect width="1000" height="1000" rx="220" fill="#e8efee"/><g fill="#2c5a66">${LOGO_MARK}</g></svg>`;
 // Icona della scheda del browser: logo chiaro su fondo verde scuro.
@@ -2968,7 +3591,7 @@ const MapLabRender = (function () {
       <button class="btn btn-ghost btn-sm" type="button" data-act="open">${ui('folder', 16)}<span>Apri</span></button>
       <button class="btn btn-ghost btn-sm" type="button" data-act="preview" title="Guarda la mappa come la vedranno gli studenti">${ui('eye', 16)}<span>Anteprima</span></button>
       <button class="btn btn-sm ed-save" type="button" data-act="export" title="Esporta la mappa: pagina HTML, immagine o PDF (Ctrl+S)">${ui('download', 16)}<span>Esporta</span></button>
-      <button class="btn btn-ghost btn-sm btn-icon" type="button" data-act="help" title="Guida rapida" aria-label="Guida rapida">${ui('help')}</button>
+      <button class="btn btn-ghost btn-sm btn-icon" type="button" data-act="help" title="Tutorial" aria-label="Tutorial">${ui('help')}</button>
     </header>
     <div class="ed-main">
       <nav class="ed-tools" aria-label="Strumenti di disegno">
@@ -2994,6 +3617,7 @@ const MapLabRender = (function () {
     <div class="ed-start" id="edStart" hidden></div>
     <input type="file" id="fileMap" accept="image/*,.svg" hidden>
     <input type="file" id="fileOpen" accept=".html,.htm,text/html" hidden>
+    <input type="file" id="fileCrono" accept=".html,.htm,.json,text/html,application/json" hidden>
     <input type="file" id="fileImg" accept="image/*" hidden>`);
 
   function toolBtn(t, icon, label, key) {
@@ -3465,7 +4089,7 @@ const MapLabRender = (function () {
     const b = $('.ed-titlebtn');
     b.textContent = t || 'Mappa senza titolo';
     b.classList.toggle('empty', !t);
-    document.title = (t ? t + ' — ' : '') + 'MapLab editor';
+    document.title = (t ? t + ' — ' : '') + 'MapLab';
   }
   function commit() {
     clearTimeout(E._commitT);
@@ -3628,6 +4252,106 @@ const MapLabRender = (function () {
     }
   }
 
+  // ---------- Collegamento con CronoLab ----------
+  // Le capsule di una linea del tempo (file HTML o JSON di CronoLab) diventano puntine con titolo,
+  // testo, data, categoria e immagine. CronoLab non conosce la posizione sulla carta: le puntine
+  // arrivano allineate in alto a sinistra e vanno trascinate nel punto giusto.
+  function cronoProject(text) {
+    const m = /<script type="application\/json" id="cronolab-project-data">([\s\S]*?)<\/script>/.exec(text);
+    let data = null;
+    try { data = JSON.parse(m ? m[1] : text); } catch (e) { data = null; }
+    const p = data && data.project && Array.isArray(data.project.capsules) ? data.project : data;
+    if (!p || !Array.isArray(p.capsules)) throw new Error('Questo file non contiene una linea del tempo di CronoLab.');
+    return p;
+  }
+  function cronoTime(date) {
+    if (!date || date.kind === 'none') return null;
+    const year = (n, era) => { n = Math.round(Math.abs(Number(n))); return n > 0 ? (era === 'BC' ? -n : n) : null; };
+    let from = null, to = null;
+    if (date.kind === 'century') {
+      const c = Math.round(Number(date.century));
+      if (!(c > 0)) return null;
+      if (date.centuryEra === 'BC') { from = -(c * 100); to = -((c - 1) * 100 + 1); } else { from = (c - 1) * 100 + 1; to = c * 100; }
+    } else {
+      from = year(date.startYear, date.startEra);
+      if (date.kind === 'range') to = year(date.endYear, date.endEra);
+    }
+    if (from == null) return null;
+    if (to != null && toAstro(to) < toAstro(from)) [from, to] = [to, from];
+    const t = { from: from };
+    if (to != null && to !== from) t.to = to;
+    if (date.approximate) t.approx = true;
+    return t;
+  }
+  function cronoText(html) {
+    const root = new DOMParser().parseFromString('<div>' + String(html || '') + '</div>', 'text/html').body.firstElementChild;
+    if (!root) return '';
+    root.querySelectorAll('li').forEach(li => li.prepend('• '));
+    root.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    root.querySelectorAll('p,div,li,h1,h2,h3,h4').forEach(el => el.append('\n'));
+    return String(root.textContent || '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, 4000);
+  }
+  function importCronoFlow() {
+    if (!E.doc) return;
+    const inp = $('#fileCrono');
+    inp.value = '';
+    inp.onchange = async () => {
+      const file = inp.files[0];
+      if (!file) return;
+      try {
+        const p = cronoProject(await readText(file));
+        const cats = new Map((p.categories || []).map(c => [c.id, c]));
+        const TYPE_CAT = { event: ['Evento', 'flag'], period: ['Periodo', 'hourglass'], note: ['Approfondimento', 'lightbulb'] };
+        const catFor = (name, color, icon) => {
+          const key = String(name || '').trim().toLowerCase();
+          let c = E.doc.categories.find(x => x.name.trim().toLowerCase() === key);
+          if (!c) {
+            const used = E.doc.categories.map(x => x.color);
+            c = { id: newId(8), name: String(name).trim().slice(0, 40), icon: icon, color: /^#[0-9a-f]{6}$/i.test(color || '') ? color : (PIN_PALETTE.find(x => used.indexOf(x) === -1) || PIN_PALETTE[0]) };
+            E.doc.categories.push(c);
+          }
+          return c.id;
+        };
+        const capsules = p.capsules.filter(c => c && c.type !== 'question' && String(c.title || '').trim());
+        if (!capsules.length) throw new Error('La linea del tempo non contiene capsule da portare sulla carta (le domande non vengono importate).');
+        const cols = Math.min(6, capsules.length);
+        capsules.forEach((c, i) => {
+          const firstCat = (Array.isArray(c.categoryIds) ? c.categoryIds : c.categoryId ? [c.categoryId] : []).map(id => cats.get(id)).find(Boolean);
+          const fallback = TYPE_CAT[c.type] || TYPE_CAT.event;
+          const pin = {
+            id: newId(), type: 'pin',
+            x: +(0.06 + (i % cols) * 0.07).toFixed(4),
+            y: +Math.min(0.94, 0.08 + Math.floor(i / cols) * 0.08).toFixed(4),
+            title: String(c.title).trim().slice(0, 200),
+            text: cronoText(c.questionMode === 'cloze' ? '' : c.text),
+            categoryId: firstCat ? catFor(firstCat.name, firstCat.color, 'map-pin') : catFor(fallback[0], '', fallback[1]),
+            color: null
+          };
+          const time = cronoTime(c.date);
+          if (time) pin.time = time;
+          const src = c.image && String(c.image.src || '');
+          if (/^https?:\/\//i.test(src)) pin.image = { url: src, caption: String(c.image.caption || ''), credit: String(c.image.source || '') };
+          else if (/^data:image\//i.test(src)) {
+            const key = newId(8);
+            E.assets.images[key] = src;
+            pin.image = { asset: key, caption: String(c.image.caption || ''), credit: String(c.image.source || '') };
+          }
+          E.doc.items.push(pin);
+        });
+        E.assetsVer++;
+        E.sel = null;
+        E.tab = 'list';
+        commit();
+        refreshData();
+        renderPanel();
+        toast(`Importate ${capsules.length} puntine da CronoLab: sono in alto a sinistra sulla carta, trascinale nel punto giusto.`, 'ok');
+      } catch (e) {
+        toast(e.message || 'Non riesco a leggere questo file di CronoLab.', 'err');
+      }
+    };
+    inp.click();
+  }
+
   function exportAssets() {
     const used = {};
     E.doc.items.forEach(it => { if (it.image && it.image.asset && E.assets.images[it.image.asset]) used[it.image.asset] = E.assets.images[it.image.asset]; });
@@ -3648,7 +4372,7 @@ const MapLabRender = (function () {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="MapLab ${MAPLAB_VERSION}">
+<meta name="generator" content="MapLab ${MAPLAB_APP_VERSION}">
 <title>${esc((E.doc.title || 'Mappa') + ' — MapLab')}</title>
 <link rel="icon" type="image/svg+xml" href="${FAVICON_HREF}">
 <style>${css}</style>
@@ -4472,6 +5196,7 @@ ${jsonScript('maplab-assets', exportAssets())}
     const glyph = it => it.type === 'pin' ? pinSvg(itemColor(it, E.doc), (catById(E.doc, it.categoryId) || {}).icon) : it.type === 'arrow' ? arrowSample(it, itemColor(it, E.doc)) : it.type === 'area' ? areaSample(it, itemColor(it, E.doc)) : ui('text', 18);
     panelEl.innerHTML = `<div class="ed-pad">
       <input class="input" type="search" data-list-q placeholder="Cerca negli elementi" value="${esc(E.listQuery)}">
+      <button class="btn btn-sm btn-ghost ed-import-crono" type="button" data-act="import-crono" title="Porta sulla carta le capsule di una linea del tempo di CronoLab">${ui('upload', 16)}Importa da CronoLab</button>
       <div class="ed-typefilter">${['pin', 'arrow', 'area', 'label'].map(t => `<button type="button" data-ltype="${t}" aria-pressed="${E.listTypes.has(t)}">${ui(t === 'pin' ? 'pin' : t === 'arrow' ? 'arrow' : t === 'area' ? 'area' : 'text', 14)}${{ pin: 'Puntine', arrow: 'Frecce', area: 'Aree', label: 'Etichette' }[t]} <span class="muted">${counts[t]}</span></button>`).join('')}</div>
       ${E.doc.items.length ? `<ul class="ed-list">${items.map(it => {
         const st = view._visibleState(it);
@@ -4712,7 +5437,7 @@ ${jsonScript('maplab-assets', exportAssets())}
       case 'export': exportDialog('html'); break;
       case 'draft-delete': deleteDraftFlow(); break;
       case 'preview': previewFlow(); break;
-      case 'help': helpDialog(); break;
+      case 'help': tutorialDialog(); break;
       case 'undo': undo(); break;
       case 'redo': redo(); break;
       case 'panel-hide': setPanelHidden(true); break;
@@ -4757,6 +5482,7 @@ ${jsonScript('maplab-assets', exportAssets())}
         break;
       }
       case 'replace-map': replaceMapFlow(); break;
+      case 'import-crono': importCronoFlow(); break;
     }
   });
 
@@ -4798,36 +5524,33 @@ ${jsonScript('maplab-assets', exportAssets())}
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushDraft(); });
   window.addEventListener('pagehide', flushDraft);
 
-  function helpDialog() {
-    const d = makeDialog(`<div class="dlg-in">
-      <div class="dlg-head"><h2>Guida rapida</h2></div>
-      <div class="dlg-body ed-help">
-        <h3>Gli strumenti</h3>
-        <ul>
-          <li><b>Puntina (P)</b>: un clic sulla carta. Per luoghi, eventi, personaggi. Titolo, categoria, testo, immagine, data.</li>
-          <li><b>Freccia (F)</b>: clicca i punti del percorso, dal primo all'ultimo; doppio clic o Invio per finire. Per spostamenti, campagne, rotte, migrazioni.</li>
-          <li><b>Area (A)</b>: clicca i punti del confine; clicca il primo punto o premi Invio per chiudere. Per territori, regni, imperi, zone d'influenza.</li>
-          <li><b>Testo (T)</b>: un clic per scrivere un nome sulla carta (mari, regioni, popoli…). Si può ruotare e ingrandire.</li>
-          <li><b>Seleziona (V)</b>: clicca un elemento per modificarlo; trascinalo per spostarlo.</li>
-        </ul>
-        <h3>Date e linea del tempo</h3>
-        <p>Se dai una data agli elementi, gli studenti trovano una linea del tempo: scorrendola vedono comparire eventi e territori. Un anno solo = evento; un periodo (dal… al…) = visibile solo in quegli anni. Per gli anni avanti Cristo scegli <b>a.C.</b></p>
-        <h3>Scorciatoie</h3>
-        <table class="ed-keys">
-          <tr><td>Ctrl+Z / Ctrl+Y</td><td>Annulla / Ripeti</td></tr>
-          <tr><td>Ctrl+S</td><td>Esporta la mappa</td></tr>
-          <tr><td>Ctrl+D</td><td>Duplica l'elemento selezionato</td></tr>
-          <tr><td>Canc</td><td>Elimina l'elemento selezionato</td></tr>
-          <tr><td>Esc</td><td>Annulla il disegno / deseleziona</td></tr>
-          <tr><td>Rotellina, + e −</td><td>Ingrandisci e rimpicciolisci</td></tr>
-        </table>
-        <h3>Esportare e riprendere il lavoro</h3>
-        <p>Con <b>Esporta</b> crei ogni volta un nuovo file: la <b>pagina HTML</b> (per gli studenti e per riaprirla qui con <b>Apri</b>), un'<b>immagine PNG</b> o un <b>PDF</b> da stampare. Finché non esporti, il lavoro resta come bozza in questo browser e lo ritrovi con <b>Riprendi il lavoro</b>; puoi eliminare la bozza dalla schermata iniziale.</p>
-      </div>
-      <div class="dlg-foot"><button class="btn" type="button" data-close>Ho capito</button></div></div>`, 'wide');
+  // =============== Tutorial ===============
+  // I testi sono nei <template> «maplab-tutorial-content» e «maplab-changelog-content», all'inizio del <body>.
+  function tutorialDialog() {
+    const d = makeDialog(`
+      <div class="dlg-head"><h2>Tutorial</h2><button class="btn btn-ghost btn-sm btn-icon" type="button" data-close title="Chiudi" aria-label="Chiudi">${ui('close')}</button></div>
+      <div class="tutorial-body"></div>`, 'tutorial-dlg');
+    const body = d.querySelector('.tutorial-body');
+    const show = page => {
+      const tpl = document.getElementById(page === 'changes' ? 'maplab-changelog-content' : 'maplab-tutorial-content');
+      body.innerHTML = tpl ? tpl.innerHTML : '';
+      body.scrollTop = 0;
+    };
+    body.addEventListener('click', e => {
+      const page = e.target.closest('[data-tutorial-page]');
+      if (page) { e.preventDefault(); show(page.dataset.tutorialPage); return; }
+      const link = e.target.closest('a[href^="#tutorial-"]');
+      if (link) {
+        e.preventDefault();
+        const target = body.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
     d.querySelector('[data-close]').onclick = () => d.close();
+    show('tutorial');
     d.showModal();
   }
+
 
   // =============== Avvio ===============
   renderHistoryBtns();
